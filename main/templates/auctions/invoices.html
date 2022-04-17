@@ -1,0 +1,116 @@
+{% extends '../base.html' %} {% block content %}
+
+{% if invoices %}
+<div class="h-auto border-2 border-gray-400 p-4 rounded-lg">
+    {% for batch in invoices %}
+        <p>Invoices generated on: {{batch.date}}</p>
+        {% for file in batch.files %}
+            <div class="bg-white overflow-hidden inline-block shadow rounded-lg w-40 md:w-40 relative">
+                <i class="h-16 w-16 rounded-full absolute opacity-50 -top-1 -right-12 fa fa-file text-black text-2xl"></i>
+                <div class="px-4 py-5 sm:p-6">
+                    <dl>
+                        <dt class="text-xs leading-5 font-medium text-gray-500 truncate mb-2">
+                            {{file}}
+                        </dt>
+                        <dd class="text-gray-500 font-semibold">
+                            <a href="/media/documents/invoices/{{file}}">
+                                <button
+                                    class="text-sm button-download-file py-1 px-2 bg-green-500 hover:bg-green-700 focus:ring-green-500 focus:ring-offset-green-200 text-white w-full transition ease-in duration-200 text-center text-base font-semibold shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 rounded-lg"
+                                >
+                                    Download File
+                                </button>
+                            </a>
+                        </dd>
+                    </dl>
+                </div>
+            </div>
+        {% endfor %}
+        {% csrf_token %}
+        <p class="msg-alert my-2"></p>
+        <input type="hidden" name="files" value='{% for file in batch.files %}{{file}},,,{% endfor %}'/>
+        <button class="mb-6 text-sm button-download-zip py-1 px-2 bg-green-500 hover:bg-green-700 focus:ring-green-500 focus:ring-offset-green-200 text-white w-full transition ease-in duration-200 text-center text-base font-semibold shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 rounded-lg">
+            Download Zip
+        </button>
+        {% for file in batch.files_alt %}
+            <div class="bg-white overflow-hidden inline-block shadow rounded-lg w-40 md:w-40 relative">
+                <i class="h-16 w-16 rounded-full absolute opacity-50 -top-1 -right-12 fa fa-file text-black text-2xl"></i>
+                <div class="px-4 py-5 sm:p-6">
+                    <dl>
+                        <dt class="text-xs leading-5 font-medium text-gray-500 truncate mb-2">
+                            {{file}}
+                        </dt>
+                        <dd class="text-gray-500 font-semibold">
+                            <a href="/media/documents/invoices/{{file}}">
+                                <button
+                                    class="text-sm button-download-file py-1 px-2 bg-green-500 hover:bg-green-700 focus:ring-green-500 focus:ring-offset-green-200 text-white w-full transition ease-in duration-200 text-center text-base font-semibold shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 rounded-lg"
+                                >
+                                    Download File
+                                </button>
+                            </a>
+                        </dd>
+                    </dl>
+                </div>
+            </div>
+        {% endfor %}
+        {% csrf_token %}
+        <p class="msg-alert my-2"></p>
+        <input type="hidden" name="files" value='{% for file in batch.files_alt %}{{file}},,,{% endfor %}'/>
+        <button class="text-sm button-download-zip py-1 px-2 bg-green-500 hover:bg-green-700 focus:ring-green-500 focus:ring-offset-green-200 text-white w-full transition ease-in duration-200 text-center text-base font-semibold shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 rounded-lg">
+            Download Zip
+        </button>
+    {% endfor %}
+</div>
+{% else %}
+<h2 class="mx-auto align-center font-bold text-1xl text-gray-600">No invoices generated yet</h2>
+{% endif %}
+
+<script>
+    $(function(){
+        download_zip = $('.button-download-zip')
+        for(var i = 0; i < download_zip.length; i++){
+            download_zip.eq(i).on('click', function(){
+                files = $(this).prev('input[name="files"]').val()
+                files = files.replace(new RegExp(',,,' + '$'), '');
+                files = files.split(',,,')
+                file0 = files[0]
+                match = /Invoice__/
+                isalt = match.test(file0) ? true : false
+                console.log(file0)
+                console.log(files)
+                date = new Date().toDateString();
+
+                filename = isalt ? `Invoices(${date}) Account(TEA COLLECTION)` : `Invoices(${date}) Account(PTBL)`
+                console.log(filename)
+                form_data = new FormData()
+                form_data.append('files', JSON.stringify(files))
+                form_data.append('filename', filename)
+                csrf_token = $('input[name="csrfmiddlewaretoken"]').val();
+                form_data.append("csrfmiddlewaretoken", csrf_token);
+
+                msg_alert = download_zip.eq(i).siblings('.msg-alert')
+
+                fetch('/download', {
+                    method: 'POST',
+                    body: form_data
+                })
+                .then((response) => {
+                    console.log(response)
+                    response.blob().then((blob) => {
+                        const downloadUrl = window.URL.createObjectURL(blob);
+                        const link = document.createElement('a');
+                        link.setAttribute('href', downloadUrl);
+                        link.setAttribute('download', filename);
+                        link.style.display = 'none';
+                        document.body.appendChild(link);
+                        link.click();
+                        window.URL.revokeObjectURL(link.href);
+                        document.body.removeChild(link);
+                    })
+                });
+
+            });
+        }
+    });
+</script>
+
+{% endblock content %}

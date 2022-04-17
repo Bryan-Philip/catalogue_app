@@ -1,0 +1,126 @@
+{% block content %}
+
+<div class="w-auto grid gap-5 md:grid-8 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+{% if data.sales %}
+  {% for value in data.sales %}
+
+    {% csrf_token %}
+    <div class="p-6 mt-8 bg-white rounded-lg sale-form">
+        <p class="mb-4 font-bold">Sale for the date: <strong>{{value.date}}</strong></p>
+        <div class="flex flex-col mb-2 form-file">
+            <div class="relative form-file-data">
+                <a href="/media/documents/sales/{{value.name}}">
+                    <input
+                        type="text"
+                        disabled
+                        class="rounded-lg border-transparent flex-1 appearance-none border border-gray-300 w-full py-2 px-4 bg-white text-gray-700 placeholder-gray-400 shadow-sm text-base focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent"
+                        name="file"
+                        placeholder="File"
+                        value="{{value.name}}"
+                    />
+                </a>
+                <input type="hidden" name="sale-name" value="{{value.name}}"/>
+            </div>
+        </div>
+        <div class="flex gap-4 mb-2 w-auto form-input">
+        <div class="relative form-left-bound">
+            <p class="font-bold text-md">Left Bound</p>
+            <p class="text-sm text-gray-700">Which column does the data start from</p>
+            <input
+                type="number"
+                class="rounded-lg border-transparent flex-1 appearance-none border border-gray-300 w-full py-2 px-4 bg-white text-gray-700 placeholder-gray-400 shadow-sm text-base focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent"
+                name="left-bound"
+                placeholder="Left bound"
+                value="{{value.left_bound}}"
+            />
+        </div>
+        <div class="relative form-title-layer">
+            <p class="font-bold text-md">Title Layer</p>
+            <p class="text-sm text-gray-700">Which row contains the title</p>
+            <input
+                type="number"
+                class="rounded-lg border-transparent flex-1 appearance-none border border-gray-300 w-full py-2 px-4 bg-white text-gray-700 placeholder-gray-400 shadow-sm text-base focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent"
+                name="title-layer"
+                placeholder="Title Layer"
+                value="{{value.data_layer}}"
+            />
+            </div>
+        </div>
+        <p class="text-blue-500">*Automatic generation of left bounds and title layers not yet functional</p>
+        <p class="msg-alert block text-red-600"></p>
+        <div class="flex w-full my-4 form-complete">
+            <input type="hidden" name="individual-sale-id" value="{{value.id}}"/>
+            <input type="hidden" name="id" value="{{data.id}}"/>
+            <button
+                class="button-update-sale py-2 px-4 bg-blue-500 hover:bg-blue-700 focus:ring-blue-500 focus:ring-offset-blue-200 text-white w-full transition ease-in duration-200 text-center text-base font-semibold shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 rounded-lg"
+            >
+                Update File Data
+            </button>
+        </div>
+    </div>
+    {% endfor %}
+{% else %}
+<h2 class="mx-auto align-center text-2xl w-full text-gray-600 font-bold">No Sales</h2>
+{% endif %}
+    </div>
+
+    <script type="text/javascript">
+        $(document).ready(function (e) {
+            buttons = $('.button-update-sale');
+            for(var i = 0; i < buttons.length; i++){
+                buttons.eq(i).on('click', function (){
+                    var form_data = new FormData();
+                    
+                    title_field = $(this).parent('.form-complete').siblings('.form-input').children('.form-title-layer').children('input[name="title-layer"]');
+                    left_field = $(this).parent('.form-complete').siblings('.form-input').children('.form-left-bound').children('input[name="left-bound"]')
+                    title_layer = title_field.val()
+                    left_bound = left_field.val()
+                    id = $(this).siblings('input[name="individual-sale-id"]').val();
+                    auction_id = $(this).siblings('input[name="id"]').val();
+                    msg_alert = $(this).parent('.form-complete').siblings('.msg-alert');
+                    csrf_token = $('input[name="csrfmiddlewaretoken"]').val();
+                                    
+                    form_data.append("data_layer", title_layer);
+                    form_data.append("left_bound", left_bound);
+                    form_data.append("csrfmiddlewaretoken", csrf_token);
+                    form_data.append("auction-id", auction_id);
+                    form_data.append("id", id);
+
+                    if(title_layer == 0 || title_layer == '' || left_bound == 0 || left_bound == '' || !title_layer > 0 || !left_bound > 0 || typeof Number(title_layer) != 'number' || typeof Number(left_bound) != 'number'){
+                        allow = false
+                    }
+                    else {
+                        allow = true
+                    }
+                    
+                    allow ?
+                        $.ajax({
+                            url: '/update_sale',
+                            dataType: 'json',
+                            cache: false,
+                            contentType: false,
+                            processData: false,
+                            data: form_data,
+                            type: 'post',
+                            success: function (response) {
+                                msg_alert.html(response.msg_sale);
+                            },
+                            error: function (response) {
+                                msg_alert.html(response.message);
+                            }
+                        })
+                    : (
+                        msg_alert.html('Ensure both left bound and title layer have a value greater than 0'),
+                        setTimeout(() => {
+                            msg_alert.html('')
+                        }, 5000)
+                    )
+                });
+            }
+        });
+    </script>
+
+  </div>
+</div>
+
+{% endblock content %}

@@ -1,0 +1,38 @@
+{% extends '../base.html' %} {% block content %}
+
+<div class="container mx-auto">
+
+	{% if years %}
+	<div class="grid cols-1 md:cols-2 lg:grid-cols-4 gap-4 px-2 md:px-4 lg:px-12">
+		{% for year, data in years.items %}
+		<div
+		class="shadow-lg rounded-xl bg-blue-500 w-auto p-6 relative overflow-hidden m-2"
+		>
+		<p class="text-white text-xl">Auction year: {{year}}</p>
+		<div class="flex items-center my-4 text-blue-500 rounded justify-between">
+			<span class="rounded-lg p-2 w-8 h-8 bg-white flex align-center content-center">
+                <i class="fa fa-calendar"></i>
+			</span>
+			<div class="flex flex-col w-full ml-2 items-start justify-evenly">
+			<p class="text-white text-lg">{{data.auctions}} auctions</p>
+			</div>
+		</div>
+        <div class="mt-4">
+            <a href="/auctions/{{year}}">
+                <button
+                    type="button"
+                    class="py-2 px-4 bg-blue-700 hover:bg-blue-800 focus:ring-blue-500 focus:ring-offset-blue-200 text-white w-full transition ease-in duration-200 text-center text-base font-semibold shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 rounded-lg"
+                >
+                    Open Year
+                </button>
+            </a>
+		</div>
+		</div>
+		{% endfor %}
+	</div>
+	{% else %}
+	<h1>No Data</h1>
+	{% endif %}
+</div>
+
+{% endblock content %}

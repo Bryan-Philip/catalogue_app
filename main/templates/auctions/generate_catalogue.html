@@ -1,0 +1,109 @@
+{% extends '../base.html' %} {% block content %}
+
+    <div class="mx-auto h-auto max-w-7xl flex align-center justify-center flex-col">
+        {% include './update_allocations.html' with year=year number=number %}
+        <div class="mx-auto max-w-3xl  bg-gray-300 rounded-lg border-gray-300 p-6">
+            {% csrf_token %}
+            <div class="flex items-center justify-center flex-col max-w-2xl mx-auto">
+                <p id="generate-alert-message" class="mt-2 mb-4"></p>
+                <button
+                    id="generate-catalogue-ctx"
+                    class="py-2 px-4 w-full max-w-lg bg-blue-600 hover:bg-blue-700 focus:ring-blue-500 focus:ring-offset-blue-200 text-white transition ease-in duration-200 text-center text-base font-semibold shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 rounded-lg">
+                    Generate Catalogue
+                </button>
+            </div>
+            {% include './catalogues.html' with catalogues=data.catalogue %}
+        </div>
+    </div>
+
+    <script type="text/javascript">
+        $(document).ready(function (e) {
+            function BoundAllow(v){
+                if(v == 0 || v == '' || !v > 0 || typeof Number(v) != 'number'){
+                    return false
+                }
+                else {
+                    return true
+                }
+            }
+            $('#generate-catalogue-ctx').on('click', function(){
+                buttons = $('.button-update-allocation');
+                data_layers = []
+                left_bounds = []
+                generate_data = []
+                buttons.length == 0 ? $('#generate-catalogue-ctx').attr('disabled', true) : ''
+                for(var i = 0; i < buttons.length; i++){
+                    pass_data = {}
+                    title_field = buttons.eq(i).parent('.form-complete').siblings('.form-input').children('.form-title-layer').children('input[name="title-layer"]');
+                    left_field = buttons.eq(i).parent('.form-complete').siblings('.form-input').children('.form-left-bound').children('input[name="left-bound"]');
+                    file_field = buttons.eq(i).parent('.form-complete').siblings('.form-file').children('.form-file-data').children('input[name="allocation-name"]');
+    
+                    title_layer = title_field.val()
+                    left_bound = left_field.val()
+                    file = file_field.val()
+                    id = buttons.eq(i).siblings('input[name="allocation-id"]').val();
+                    auction_id = buttons.eq(i).siblings('input[name="id"]').val();
+    
+                    data_layers.push(title_layer)
+                    left_bounds.push(left_bound)
+    
+                    pass_data.data_layer = title_layer
+                    pass_data.left_bound = left_bound
+                    pass_data.file = file
+                    pass_data.id = id
+                    pass_data.auction_id = auction_id
+    
+                    generate_data.push(pass_data)
+                }
+
+                var form_data = new FormData();
+                msg_alert = $('#generate-alert-message')
+                csrf_token = $('input[name="csrfmiddlewaretoken"]').val();
+
+                form_data.append("csrfmiddlewaretoken", csrf_token);
+                form_data.append("auction_id", auction_id);
+                form_data.append("id", id);
+                form_data.append("data", JSON.stringify(generate_data));
+    
+                console.log(generate_data)
+
+                bounds = [...left_bounds, ...data_layers];
+
+                console.log(bounds)
+
+                for(var i = 0; i < bounds.length; i++){
+                    if(!BoundAllow(bounds[i])){
+                        allow = false
+                        break
+                    }
+                    else allow = true
+                }
+    
+                allow ?
+                    $.ajax({
+                        url: '/generate_catalogue',
+                        dataType: 'json',
+                        cache: false,
+                        contentType: false,
+                        processData: false,
+                        data: form_data,
+                        type: 'post',
+                        success: function (response) {
+                            msg_alert.html(response.msg);
+                        },
+                        error: function (response) {
+                            msg_alert.html(response.message);
+                        }
+                    })
+                : (
+                    msg_alert.html('<span class="text-red-500">*Ensure all left bound and title layer fields have a value greater than 0</span>'),
+                    setTimeout(() => {
+                        msg_alert.html('')
+                    }, 5000)
+                )
+    
+            })
+        });
+    </script>
+
+{% endblock content %}

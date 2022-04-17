@@ -1,0 +1,211 @@
+{% extends '../base.html' %} {% block content %}
+
+    <div class="mx-auto h-auto max-w-7xl flex align-center justify-center flex-col">
+        {% include './update_sale.html' with year=year number=number %}
+        <div class="mx-auto max-w-7xl grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-4 lg:gap-6 bg-gray-300 rounded-lg border-gray-300 p-6">
+            {% if data.sales %}
+            {% for sale in data.sales %}
+                {% csrf_token %}
+                <div class="flex items-center justify-start flex-col max-w-2xl mx-auto bg-white p-6 rounded-lg">
+                    <h2 class="mb-4 text-2xl">Generate Invoices for the Sale on Date: <span class="font-bold">{{sale.date}}</span></h2>
+                    <p class="text-blue-500">*Auto-generated fields</p>
+                    <div class="datepicker form-sale-date-picker relative form-floating mb-3 xl:w-96" data-mdb-toggle-button="false">
+                        <input type="text"
+                        class="form-control block w-full px-3 py-1.5 text-base font-normal text-gray-700 bg-white bg-clip-padding border border-solid border-gray-300 rounded transition ease-in-out m-0 focus:text-gray-700 focus:bg-white focus:border-blue-600 focus:outline-none"
+                        placeholder="Sale date" value="{{sale.date_slash}}" name="form-sale-date"/>
+                        <input type="hidden" name="form-sale-date-formatted" value="{{sale_date_format}}"/>
+                        <label for="floatingInput" class="text-gray-700">Sale Date</label>
+                        <button class="datepicker-toggle-button" data-mdb-toggle="datepicker">
+                        <i class="fas fa-calendar datepicker-toggle-icon"></i>
+                        </button>
+                    </div>
+                    <div class="datepicker form-prompt-date-picker relative form-floating mb-3 xl:w-96" data-mdb-toggle-button="false">
+                        <input type="text"
+                        class="form-control block w-full px-3 py-1.5 text-base font-normal text-gray-700 bg-white bg-clip-padding border border-solid border-gray-300 rounded transition ease-in-out m-0 focus:text-gray-700 focus:bg-white focus:border-blue-600 focus:outline-none"
+                        placeholder="Prompt date" value="{{prompt_date}}" name="form-prompt-date"/>
+                        <input type="hidden" name="form-prompt-date-formatted" value="{{prompt_date_format}}"/>
+                        <label for="floatingInput" class="text-gray-700">Prompt Date</label>
+                        <button class="datepicker-toggle-button" data-mdb-toggle="datepicker">
+                        <i class="fas fa-calendar datepicker-toggle-icon"></i>
+                        </button>
+                    </div>
+                    <p class="generate-alert-message" class="mt-2 mb-4"></p>
+                    <input type="hidden" name="sale-stamp" value="{{sale.timestamp}}"/>
+                    <input type="hidden" name="sale-id" value="{{sale.id}}"/>
+                    <input type="hidden" name="catalogue-data" value="{{catalogue_data}}"/>
+                    <input type="hidden" name="invoice-data" value="{{invoice_data}}"/>
+                    <input type="hidden" name="invoice-number" value="{{invoice_number}}"/>
+                    <input type="hidden" name="auction-id" value="{{number}}"/>
+                    <input type="hidden" name="auction-year" value="{{year}}"/>
+                    <button
+                        class="generate-invoices-ctx py-2 px-4 w-full max-w-lg bg-blue-600 hover:bg-blue-700 focus:ring-blue-500 focus:ring-offset-blue-200 text-white transition ease-in duration-200 text-center text-base font-semibold shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 rounded-lg">
+                        Generate Invoices
+                    </button>
+                </div>
+                {% include './invoices.html' with invoices=data.invoices %}
+            {% endfor %}
+            {% else %}
+                {% csrf_token %}
+                <div class="flex items-center justify-center flex-col max-w-2xl mx-auto">
+                    <p class="text-blue-500">*Auto-generated fields</p>
+                    <div class="datepicker relative form-floating mb-3 xl:w-96" data-mdb-toggle-button="false">
+                        <input type="text"
+                        class="form-control block w-full px-3 py-1.5 text-base font-normal text-gray-700 bg-white bg-clip-padding border border-solid border-gray-300 rounded transition ease-in-out m-0 focus:text-gray-700 focus:bg-white focus:border-blue-600 focus:outline-none"
+                        placeholder="Sale date" value="{{sale_date}}" name="form-sale-date"/>
+                        <label for="floatingInput" class="text-gray-700">Sale Date</label>
+                        <button class="datepicker-toggle-button" data-mdb-toggle="datepicker">
+                        <i class="fas fa-calendar datepicker-toggle-icon"></i>
+                        </button>
+                    </div>
+                    <div class="datepicker relative form-floating mb-3 xl:w-96" data-mdb-toggle-button="false">
+                        <input type="text"
+                        class="form-control block w-full px-3 py-1.5 text-base font-normal text-gray-700 bg-white bg-clip-padding border border-solid border-gray-300 rounded transition ease-in-out m-0 focus:text-gray-700 focus:bg-white focus:border-blue-600 focus:outline-none"
+                        placeholder="Prompt date" value="{{prompt_date}}" name="form-prompt-date"/>
+                        <label for="floatingInput" class="text-gray-700">Prompt Date</label>
+                        <button class="datepicker-toggle-button" data-mdb-toggle="datepicker">
+                        <i class="fas fa-calendar datepicker-toggle-icon"></i>
+                        </button>
+                    </div>
+                    <p class="generate-alert-message mt-2 mb-4 pb-2 text-center relative"></p>
+                    <input type="hidden" name="sale-stamp" value="{{sale.timestamp}}"/>
+                    <input type="hidden" name="sale-id" value="{{sale.id}}"/>
+                    <input type="hidden" name="auction-id" value="{{number}}"/>
+                    <input type="hidden" name="auction-year" value="{{year}}"/>
+                    <button
+                        class="generate-invoices-ctx py-2 px-4 w-full max-w-lg bg-blue-600 hover:bg-blue-700 focus:ring-blue-500 focus:ring-offset-blue-200 text-white transition ease-in duration-200 text-center text-base font-semibold shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 rounded-lg">
+                        Generate Invoices
+                    </button>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <script type="text/javascript">
+        $(document).ready(function (e) {
+            function BoundAllow(v){
+                if(v == 0 || v == '' || !v > 0 || typeof Number(v) != 'number'){
+                    return false
+                }
+                else {
+                    return true
+                }
+            }
+
+            function getSale(id){
+                button = $(`input[value="${id}"]`).siblings('button')
+                data_layers = []
+                left_bounds = []
+                generate_data = []
+                button.length == 0 ? $('.generate-invoices-ctx').attr('disabled', true) : ''
+                pass_data = {}
+                title_field = button.parent('.form-complete').siblings('.form-input').children('.form-title-layer').children('input[name="title-layer"]');
+                left_field = button.parent('.form-complete').siblings('.form-input').children('.form-left-bound').children('input[name="left-bound"]');
+                file_field = button.parent('.form-complete').siblings('.form-file').children('.form-file-data').children('input[name="sale-name"]');
+
+                title_layer = title_field.val()
+                left_bound = left_field.val()
+                file = file_field.val()
+                id = button.siblings('input[name="sale-id"]').val();
+                auction_Pid = button.siblings('input[name="id"]').val();
+
+                data_layers.push(title_layer)
+                left_bounds.push(left_bound)
+
+                pass_data.data_layer = title_layer
+                pass_data.left_bound = left_bound
+                pass_data.file = file
+                pass_data.id = id
+                pass_data.auction_id = auction_id
+
+                generate_data.push(pass_data)
+                return {
+                    'generate_data': generate_data,
+                    'data_layers': data_layers,
+                    'left_bounds': left_bounds,
+                }
+            }
+
+            gs = $('.generate-invoices-ctx');
+            for(var b = 0; b < gs.length; b++){
+                gs.eq(b).on('click', function(){
+                    var form_data = new FormData();
+                    form_id = $(this).siblings('input[name="sale-id"]').val()
+                    msg_alert = $(this).siblings('.generate-alert-message')
+                    csrf_token = $('input[name="csrfmiddlewaretoken"]').val();
+
+                    sale_date = $(this).siblings('.form-sale-date-picker').children('input[name="form-sale-date-formatted"]').val()
+                    prompt_date = $(this).siblings('.form-prompt-date-picker').children('input[name="form-prompt-date-formatted"]').val()
+
+                    auction_id = $(this).siblings('input[name="auction-id"]').val()
+                    auction_year = $(this).siblings('input[name="auction-year"]').val()
+
+                    catalogue_data = $(this).siblings('input[name="catalogue-data"]').val()
+                    invoice_data = $(this).siblings('input[name="invoice-data"]').val()
+                    invoice_number = $(this).siblings('input[name="invoice-number"]').val()
+
+                    generate_data = getSale(form_id).generate_data
+                    left_bounds = getSale(form_id).left_bounds
+                    data_layers = getSale(form_id).data_layers
+
+                    form_data.append('data', JSON.stringify(generate_data))
+                    form_data.append("csrfmiddlewaretoken", csrf_token);
+                    form_data.append('sale_date', sale_date);
+                    form_data.append('prompt_date', prompt_date);
+                    form_data.append('auction_id', auction_id);
+                    form_data.append('auction_Pid', auction_Pid);
+                    form_data.append('auction_year', auction_year);
+                    form_data.append('catalogue_data', catalogue_data);
+                    form_data.append('invoice_data', invoice_data);
+                    form_data.append('invoice_number', invoice_number);
+                            
+                    bounds = [...left_bounds, ...data_layers];
+
+                    for(var i = 0; i < bounds.length; i++){
+                        if(!BoundAllow(bounds[i])){
+                            allow = false
+                            break
+                        }
+                        else
+                            if(catalogue_data == "None"){
+                                allow = 'missing'
+                            }
+                            else {
+                                allow = true
+                            }
+                    }
+
+                    if(allow === true){
+                        $.ajax({
+                            url: '/generate_invoices',
+                            dataType: 'json',
+                            cache: false,
+                            contentType: false,
+                            processData: false,
+                            data: form_data,
+                            type: 'post',
+                            success: function (response) {
+                                msg_alert.html(response.msg);
+                            },
+                            error: function (response) {
+                                msg_alert.html(response.message);
+                            }
+                        })
+                    }
+                    else if(allow == "missing"){
+                        msg_alert.html('<span class="text-red-500 text-center">*No Catalogue Data Generated. Upload This Sale&apos;s allocations to generate the catalogue data</span>');
+                        setTimeout(() => {
+                            msg_alert.html('')
+                        }, 5000)
+                    }
+                    else if(!allow){
+                        msg_alert.html('<span class="text-red-500 relative">*Ensure all left bound and title layer fields have a value greater than 0</span>');
+                        setTimeout(() => {
+                            msg_alert.html('')
+                        }, 5000)
+                    }
+                })
+            }
+        });
+    </script>
+
+{% endblock content %}

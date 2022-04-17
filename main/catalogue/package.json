@@ -1,0 +1,57 @@
+{
+    "watch": {
+        "main": {
+            "patterns": [
+                "read"
+            ],
+            "extensions": "py",
+            "quiet": false,
+            "legacyWatch": true
+        },
+        "interpretor": {
+            "patterns": [
+                "interpret"
+            ],
+            "extensions": "py",
+            "quiet": false,
+            "legacyWatch": true
+        },
+        "format": {
+            "patterns": [
+                "format"
+            ],
+            "extensions": "py",
+            "quiet": false,
+            "legacyWatch": true
+        },
+        "invoice": {
+            "patterns": [
+                "invoice"
+            ],
+            "extensions": "py",
+            "quiet": false,
+            "legacyWatch": true
+        }
+    },
+    "scripts": {
+        "main": "C:/Python38/python.exe read.py",
+        "run": "nodemon --exec C:/Python38/python.exe read.py",
+        "run_clear": "npx nodemon --exec C:/Python38/python.exe read.py",
+        "interpret": "nodemon --exec C:/Python38/python.exe interpret.py",
+        "format": "nodemon --exec C:/Python38/python.exe format.py",
+        "invoice": "nodemon --exec C:/Python38/python.exe invoice.py",
+        "watch": "npm-watch",
+        "watch_main": "npm-watch main",
+        "watchemon": "npm run run",
+        "watchemon_clear": "npm run run_clear",
+        "watch_interpretor": "npm run interpret",
+        "watch_format": "npm run format",
+        "watch_invoice": "npm run invoice"
+    },
+    "events": {
+        "watchemon_clear": "node -e console.clear()"
+    },
+    "dependencies": {
+        "npm-watch": "^0.11.0"
+    }
+}

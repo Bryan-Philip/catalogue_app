@@ -1,0 +1,38 @@
+{% extends '../base.html' %} {% block content %}
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mx-auto h-auto">
+        {% include './upload_allocations.html' with year=year number=number %}
+        {% include './upload_sale.html' with year=year number=number %}
+        <div class="flex flex-col mb-2">
+            <div class="relative">
+                <a href="/auctions/{{year}}/{{number}}/generate_catalogue">
+                    <button
+                        class="py-2 px-4 bg-blue-600 hover:bg-blue-700 focus:ring-blue-500 focus:ring-offset-blue-200 text-white w-full transition ease-in duration-200 text-center text-base font-semibold shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 rounded-lg">
+                        Generate Catalogue
+                    </button>
+                </a>
+            </div>
+        </div>
+        <div class="flex flex-col mb-2">
+            <div class="relative">
+                <a href="/auctions/{{year}}/{{number}}/generate_invoices">
+                    <button
+                        class="py-2 px-4 bg-blue-600 hover:bg-blue-700 focus:ring-blue-500 focus:ring-offset-blue-200 text-white w-full transition ease-in duration-200 text-center text-base font-semibold shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 rounded-lg">
+                        Generate Invoices
+                    </button>
+                </a>
+            </div>
+        </div>
+        <div class="flex flex-col mb-2">
+            <div class="relative">
+                <a href="/auctions/{{year}}/{{number}}/generate_account_sales">
+                    <button
+                        class="py-2 px-4 bg-blue-600 hover:bg-blue-700 focus:ring-blue-500 focus:ring-offset-blue-200 text-white w-full transition ease-in duration-200 text-center text-base font-semibold shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 rounded-lg">
+                        Generate Account Sales
+                    </button>
+                </a>
+            </div>
+        </div>
+    </div>
+
+{% endblock content %}

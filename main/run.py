@@ -1,0 +1,1 @@
+print("this file has been executed externally")

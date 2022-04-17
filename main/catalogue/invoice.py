@@ -1,0 +1,577 @@
+from openpyxl import load_workbook
+from mysql.connector import connect
+from main.catalogue.connector import CONNECTOR
+import re
+from main.catalogue.query import *
+from django.core.files.storage import FileSystemStorage
+import json
+from main.catalogue.format import *
+import zlib
+import zipfile
+
+# invoice = load_workbook(filename = 'EMPIRE INVOICE.xlsx')
+dest_filename = 'invoiced.xlsx'
+
+DATA_LETTERS = ['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z']
+DATA_ALIAS = {
+    "buyer_code": ['buyer'],
+    "invoice_number": None,
+    "sale_date": None,
+    "prompt_date": None,
+    "receiver_address_line1": None,
+    "receiver_address_line2": None,
+    "receiver_address_line3": None,
+    "auction_number": None,
+    "lot_number": ['lot no'],
+    "invoice_number_buyer": ['invoice'],
+    "mark": ['mark'],
+    "warehouse": None,
+    "packages": ['packages'],
+    "type": ['packing type', 'packaging type'],
+    "grade": ['grade'],
+    "net": ['net weight', 'net weight(in kg)'],
+    "gross": ['gross weight', 'gross weight(in kg)'],
+    "base_price": ['base price'],
+    "broker_starting_price": ['broker starting price', 'broker starting price($)'],
+    "price": ['sale price', 'sale price($)'],
+    "status": ['status'],
+    "sold_packages": ['sold packages'],
+    "certification": ['certification'],
+    "manufacture_date": ['manf date'],
+    "producer": ['producer'],
+    "broker": ['broker'],
+    "number": ["si no", "sl no"]
+}
+
+DATA_INVOICE = {
+    "buyer_code": 'K5',
+    "invoice_number": 'M6',
+    "sale_date": 'M7',
+    "prompt_date": 'M8',
+    "receiver_address_line1": 'B5',
+    "receiver_address_line2": 'B6',
+    "receiver_address_line3": 'B7',
+    "auction_number": 'K11',
+    "lot_number": 'A13',
+    "invoice_number_buyer": 'B13',
+    "mark": 'C13',
+    "warehouse": 'D13',
+    "packages": 'E13',
+    "type": 'F13',
+    "grade": 'G13',
+    "net": 'H13',
+    "price": 'I13',
+}
+
+DATA_INVOICE_META = {
+    "buyer_code": 'K5',
+    "invoice_number": 'M6',
+    "sale_date": 'M7',
+    "prompt_date": 'M8',
+    "receiver_address_line1": 'B5',
+    "receiver_address_line2": 'B6',
+    "receiver_address_line3": 'B7',
+    "auction_number": 'K11',
+}
+
+DATA_INVOICE_SUBTOTALS = {
+    'pkgs': 'E',
+    'net': 'H',
+    'amount': 'J',
+    'brokerage': 'K',
+    'whtax': 'L',
+    'payable_amount': 'M'
+}
+
+DATA_INVOICE_TAX_SUMMARY = {
+    'amount': 'A',
+    'brokerage': 'C',
+    'gross': 'E',
+    'whtax': 'G',
+    'payable_amount': 'I'
+}
+
+DATA_SALE_RELATION = {
+    'lot_number': 'A',
+    'invoice_number_buyer': 'B',
+    'mark': 'C',
+    'warehouse': 'D',
+    'packages': 'E',
+    'type': 'F',
+    'grade': 'G',
+    'net': 'H',
+    'price': 'I',
+    '_amount': 'J',
+    '_brokerage': 'K',
+    '_whtax': 'L',
+    '_payable_amount': 'M'
+}
+
+DATA_SALE = {
+    'lot_number': 'A',
+    'invoice_number_buyer': 'B',
+    'mark': 'C',
+    'warehouse': 'D',
+    'packages': 'E',
+    'type': 'F',
+    'grade': 'G',
+    'net': 'H',
+    'price': 'I',
+    '_amount': '=H*I',
+    '_brokerage': '=J*0.005',
+    '_whtax': '=K*0.05',
+    '_payable_amount': '=SUM(J+K)-L'
+}
+
+def InvoiceNumberQuery():
+    try:
+        with connect(**CONNECTOR) as connection:
+            current_number = '''SELECT `number` FROM `invoice_number`'''
+            with connection.cursor() as cursor:
+                cursor.execute(current_number)
+                row = cursor.fetchone()
+                return row[0]
+                        
+    except Error as e:
+            print(e)
+
+INVOICE_COUNTER = InvoiceNumberQuery()
+def InvoiceCounter():
+    global INVOICE_COUNTER
+    if(INVOICE_COUNTER < 2000):
+        INVOICE_COUNTER += 1
+        # if len(str(INVOICE_COUNTER)) == 1:
+        #     INVOICE_COUNTER = '00' + str(INVOICE_COUNTER)
+        # elif len(str(INVOICE_COUNTER)) == 2:
+        #     INVOICE_COUNTER = '0' + str(INVOICE_COUNTER)
+    else:
+        INVOICE_COUNTER = 1
+        # INVOICE_COUNTER = '00' + str(1)
+    return INVOICE_COUNTER
+
+def CloseInvoiceNumber(invoice_number, Pid):
+    try:
+        with connect(**CONNECTOR) as connection:
+            update_lot = '''UPDATE `main_auctions` SET `invoice_number` = %s WHERE `Pid` = %s'''
+            with connection.cursor() as cursor:
+                cursor.execute(update_lot, (invoice_number, Pid,))
+                connection.commit()
+
+    except Error as e:
+        print(e)
+
+def GenerateInvoiceNumber(auction_number, counter):
+    base = 'PRME/'
+    base_conform = 'PRME_'
+    return {
+        'number': base + str(auction_number) + '/' + str(counter),
+        'file': base_conform + str(auction_number) + '_' + str(counter)
+    }
+    # return {
+    #     'number': base + str(auction_number) + '/' + str(InvoiceCounter()),
+    #     'file': base_conform + str(auction_number) + '_' + str(InvoiceCounter())
+    # }
+
+def findAlias(list, value):
+    perfect = [
+        'grade',
+        'mark',
+        "number",
+    ]
+    end = len(list)
+    counter = 1
+    for alias in list:
+        if(value in perfect):
+            if(re.search(alias, value) != None):
+                return True
+            else:
+                if(counter == end):
+                    return False
+                else:
+                    pass
+        else:
+            if(value == alias):
+                return True
+            else:
+                if(counter == end):
+                    return False
+                else:
+                    pass
+        counter += 1
+    
+
+def getAliasRelation(value):
+    endif = 0
+    for alias in DATA_ALIAS:
+        endif += 1
+        if(DATA_ALIAS[alias] != None):
+            if(findAlias(DATA_ALIAS[alias], value.lower())):
+                return alias
+            else:
+                if endif == len(DATA_ALIAS):
+                    return alias
+                else:
+                    continue
+        else: continue
+
+class DataInterpretor:
+    def init_data(left_bound, data_layer, file):
+        left_bound = int(left_bound)
+        data_layer = int(data_layer)
+        folder='media/documents/sales/'
+        fs = FileSystemStorage(location=folder)
+        file_data = fs.open(file, 'rb+')
+        WORKBOOK = load_workbook(filename = file_data )
+        DATA = {}
+        RELATION = []
+        sheet = WORKBOOK.active
+        bc = 0
+        inner = list()
+        endif_check = list()
+        for row in sheet.values:
+            allow = True
+            inner_counter = 0
+            for value in row:
+                if(inner_counter >= left_bound-1):
+                    if(value != None):
+                        if(bc == data_layer-1):
+                            value = re.sub(r'\t', '', value)
+                            RELATION.append(value)
+                        inner.append(value)
+                    else:
+                        inner.append(None)
+                        endif_check.append(value)
+                inner_counter += 1
+            if(len(endif_check) >= 5 and bc >= 5):
+                allow = False
+                break
+            elif(bc >= data_layer and len(endif_check) < 5):
+                if allow: DATA[bc-(data_layer)] = row[slice(left_bound-1, len(row))]
+            inner = list()
+            endif_check = list()
+            bc += 1
+        return {
+            'relation': RELATION,
+            'data': DATA
+        }
+
+    def generate_data(data):
+        set_data = list()
+        counter = 0
+        for vals in data['data'].values():
+            inner_counter = 0
+            inner_dict = dict()
+            for inner_data in vals:
+                relation = getAliasRelation(data['relation'][inner_counter])
+                if(relation != False):
+                    inner_dict[relation] = inner_data
+                else:
+                    inner_dict[relation] = None
+                inner_counter += 1
+            set_data.append(inner_dict)
+            counter += 1
+        return set_data
+
+STACK_DATA = {}
+combined = list()
+LOT_STATUS_RELATION = dict()
+populated = list()
+BUYERS = list()
+BUYERS_RELATION = dict()
+BUYERS_OUTLOT = list()
+
+def StackGenerator(input_data):
+    global STACK_DATA
+    global BUYERS
+    counter = 0
+    for file in input_data:
+        STACK_DATA[counter] = DataInterpretor.generate_data(
+            DataInterpretor.init_data(
+                file['left_bound'],
+                file['data_layer'],
+                file['file']
+            )
+        )
+        counter += 1
+    STACK_DATA = STACK_DATA[0]
+    for lot in STACK_DATA:
+        LOT_STATUS_RELATION[lot['lot_number']] = lot['status']
+    for data in STACK_DATA:
+        exist = list()
+        inner_val = dict()
+        for single in data:
+            if(single in DATA_INVOICE.keys()):
+                exist.append(single)
+        for value in DATA_INVOICE.keys():
+            if(value in exist):
+                inner_val[value] = data[value]
+            else:
+                inner_val[value] = None
+        populated.append(inner_val)
+    for lot in populated:
+        if lot['buyer_code'] != '':
+            BUYERS.append(lot['buyer_code'])
+            # BUYERS += lot['buyer_code']
+    BUYERS = list(set(BUYERS))
+    for buyer in BUYERS:
+        BUYERS_RELATION[buyer] = list()
+    for buyer in BUYERS:
+        for lot in populated:
+            if lot['buyer_code'] == buyer and LOT_STATUS_RELATION[lot['lot_number']].lower() == 'sold':
+                BUYERS_RELATION[buyer].append(lot)
+            else:
+                BUYERS_OUTLOT.append(lot)
+    
+# def arrangeData():
+#     global BUYERS
+#     for lot in populated:
+#         if lot['buyer_code'] != '': BUYERS.append(lot['buyer_code'])
+#     BUYERS = set(BUYERS)
+#     for buyer in BUYERS:
+#         BUYERS_RELATION[buyer] = list()
+#     for buyer in BUYERS:
+#         for lot in populated:
+#             if lot['buyer_code'] == buyer and LOT_STATUS_RELATION[lot['lot_number']].lower() == 'sold':
+#                 BUYERS_RELATION[buyer].append(lot)
+#             else:
+#                 BUYERS_OUTLOT.append(lot)
+# arrangeData()
+
+def formatAddress(address):
+    def splitAddress(val):
+        data = re.split("[,]+", str(val), flags=re.IGNORECASE)
+        if(data[1][0] == ' '):
+            data[1] = re.sub(' ', '', data[1], 1)
+        return data
+    if(address !=  None):
+        if(re.search(',', address)):
+            return splitAddress(address)
+        else:
+            counter = 0
+            if(re.search('Mombasa', address)):
+                address = address.replace('Mombasa', ',Mombasa')
+            elif(re.search('Nairobi', address)):
+                address = address.replace('Nairobi', ',Nairobi')
+            elif(re.search('Kericho', address)):
+                address = address.replace('Kericho', ',Kericho')
+            else:
+                address += ',Nairobi'
+            return splitAddress(address)
+    else:
+        return ['', '']
+    
+def populate_number(val, level):
+    data_length = len(val)
+    functions = [
+        'SUM', 'PRODUCT', 'DIFFERENCE', 'AVG',
+    ]
+    hasfn = False
+    for fn in functions:
+        if(re.search(fn, val)):
+            hasfn = True
+    counter = 0
+    brack = False
+    for v in val:
+        if(v == '('):
+            brack = True
+        if v in DATA_LETTERS:
+            if(not hasfn):
+                val = val.replace(v, v+str(level))
+            else:
+                if(brack == True):
+                    val = val.replace(v, v+str(level))
+        if(counter == data_length-1):
+            return val
+        counter += 1
+
+NUMBER_FORMAT_CELLS = list()
+def PopulateRow(sheet, level, row_data, catalogue_data):
+    global NUMBER_FORMAT_CELLS
+    NUMBER_FORMAT_CELLS = list()
+    for data in DATA_SALE:
+        mark = row_data['mark']
+        warehouse = DatabaseQueryProducerCompany(mark)
+        if(data[0] != '_'):
+            # if(data == 'warehouse'):
+            #     sheet[str(str(DATA_SALE_RELATION[data])+str(level))] = warehouse
+            if(data == 'warehouse'):
+                # print('row data')
+                # print(row_data)
+                # print(row_data['invoice_number_buyer'])
+                sheet[str(str(DATA_SALE_RELATION[data])+str(level))] = GetInvoiceWarehouse(catalogue_data, row_data['invoice_number_buyer'])
+            elif(data == 'packages' or data == 'net'):
+                sheet[str(str(DATA_SALE_RELATION[data])+str(level))] = int(row_data[data])
+            else:
+                sheet[str(str(DATA_SALE_RELATION[data])+str(level))] = row_data[data]
+            Format.GeneralCenter(sheet[str(str(DATA_SALE_RELATION[data])+str(level))])
+        else:
+            sheet[populate_number(DATA_SALE_RELATION[data], level)] = populate_number(DATA_SALE[data], level)
+            sheet[populate_number(DATA_SALE_RELATION[data], level)].number_format = '$#,##0.00'
+            Format.GeneralCenter(sheet[populate_number(DATA_SALE_RELATION[data], level)])
+            cell = populate_number(DATA_SALE_RELATION[data], level)
+            NUMBER_FORMAT_CELLS.append(cell)
+    return NUMBER_FORMAT_CELLS
+
+
+def GetInvoiceWarehouse(catalogue_data, invoice_number):
+    lot_warehouse = None
+    for data in catalogue_data:
+        for lot in data:
+            if(lot == 'invoice_number'):
+                if(data['invoice_number'] == invoice_number):
+                    lot_warehouse = data['warehouse']
+    return lot_warehouse
+
+def GenerateInvoice(data, custom_values, counter, type="default"):
+    folder='media/resources/'
+    fs = FileSystemStorage(location=folder)
+    template_default = fs.open('EMPIRE INVOICE TEMPLATE.xlsx', 'rb+')
+    template_alt = fs.open('EMPIRE INVOICE TEMPLATE ALT.xlsx', 'rb+')
+    if(type == 'default'):
+        file_data = template_default
+    else:
+        file_data = template_alt
+    
+    empire_template = load_workbook(filename = file_data)
+    invoice_number = GenerateInvoiceNumber(custom_values['auction_number'], counter)['number']
+    sale_date = custom_values['sale_date']
+    prompt_date = custom_values['prompt_date']
+        
+    catalogue_data = custom_values['catalogue_data']
+    invoice_data = custom_values['invoice_data']
+    folder='media/documents/catalogue_data'
+    fsc = FileSystemStorage(location=folder)
+    
+    with fsc.open(catalogue_data, 'rb+') as fcc_file:
+        file_datac = json.load(fcc_file)
+
+    # print(file_datac)
+
+    invoice_file = GenerateInvoiceNumber(custom_values['auction_number'], counter)['file']
+    
+    fs_save_folder = 'media/documents/invoices/'
+    
+    if(type == 'default'):
+        _filename = 'Invoice_' + invoice_file + '.xlsx'
+    else:
+        _filename = 'Invoice__' + invoice_file + '.xlsx'
+
+    dest_save_path = fs_save_folder + _filename
+    
+    for buyer in data:
+        if(buyer == 'CKLB'):
+            buyer_company = DatabaseQueryBuyerCompany('CKL')
+        elif(buyer == 'JFLB'):
+            buyer_company = DatabaseQueryBuyerCompany('JFL')
+        else: 
+            buyer_company = DatabaseQueryBuyerCompany(buyer)
+        if(buyer == 'CKLB'):
+            buyer_address = DatabaseQueryBuyerAddress('CKL')
+        elif(buyer == 'JFLB'):
+            buyer_address = DatabaseQueryBuyerAddress('JFL')
+        else: 
+            buyer_address = DatabaseQueryBuyerAddress(buyer)
+        code = buyer
+        address_line1 = buyer_company
+        address_line2 = formatAddress(buyer_address)[0]
+        address_line3 = formatAddress(buyer_address)[1]
+        meta_relation = {
+            'buyer_code': 'BUYER CODE: ' + code,
+            'invoice_number': 'INVOICE NO: ' + invoice_number,
+            'sale_date': 'Sale Date: ' + sale_date,
+            'prompt_date': 'Prompt Date: ' + prompt_date,
+            'receiver_address_line1': address_line1,
+            'receiver_address_line2': address_line2,
+            'receiver_address_line3': address_line3,
+            'auction_number': custom_values['auction_number']
+        }
+        lot_start = 13
+        lot_limit_start = lot_start
+        subtotals = 14
+        tax_summary = 19
+        lot = data[buyer]
+        data_length = len(lot)
+        subtotals += data_length-1
+        tax_summary += data_length-1
+        if(data_length > 1):
+            empire_template.active.insert_rows(25, data_length-1)
+            empire_template.active.insert_rows(lot_start, data_length-1)
+        NUMBER_CELLS = list()
+        for lot_data in lot:
+            # NUMBER_CELLS.append(PopulateRow(empire_template.active, lot_start, lot_data, file_datac))
+            NUMBER_CELLS += [*PopulateRow(empire_template.active, lot_start, lot_data, file_datac), *NUMBER_CELLS]
+            lot_start += 1
+        for cell in NUMBER_CELLS:
+            empire_template.active[cell].number_format = '$#,##0.00'
+        lot_end = lot_start-1
+        SUMMARY_RELATION = {}
+        # print(lot_end+1)
+        for subtotal in DATA_INVOICE_SUBTOTALS:
+            empire_template.active[DATA_INVOICE_SUBTOTALS[subtotal]+str(subtotals)] = '=SUM(' + DATA_INVOICE_SUBTOTALS[subtotal] + str(lot_limit_start) + ':' + DATA_INVOICE_SUBTOTALS[subtotal] + str(lot_end) + ')'
+            SUMMARY_RELATION[subtotal] = '=' + DATA_INVOICE_SUBTOTALS[subtotal]+str(subtotals)
+        # print(subtotals)
+        # print(tax_summary)
+        # print(SUMMARY_RELATION)
+        for summary in DATA_INVOICE_TAX_SUMMARY:
+            if(summary != 'gross'):
+                empire_template.active[DATA_INVOICE_TAX_SUMMARY[summary]+str(tax_summary)] = SUMMARY_RELATION[summary]
+                empire_template.active[DATA_INVOICE_TAX_SUMMARY[summary]+str(tax_summary)].number_format = '$#,##0.00'
+            else:
+                empire_template.active[DATA_INVOICE_TAX_SUMMARY[summary]+str(tax_summary)] = '=SUM(' + DATA_INVOICE_TAX_SUMMARY['amount'] + str(tax_summary) + ':' + DATA_INVOICE_TAX_SUMMARY['brokerage'] + str(tax_summary) + ')'
+                empire_template.active[DATA_INVOICE_TAX_SUMMARY[summary]+str(tax_summary)].number_format = '$#,##0.00'
+        for meta in DATA_INVOICE_META:
+            empire_template.active[DATA_INVOICE_META[meta]] = meta_relation[meta]
+            
+        # workbook = xlsxwriter.Workbook(dest_save_path)
+        # worksheet = workbook.add_worksheet()
+        # row = 1
+        # col = 3
+        # options = {
+        #     'fill': {'none': True},
+        # }
+        # text = 'PRIME TEA BROKERS LIMITED\n1st Floor Suite 4, Rex House, Moi Avenue\nP.O. Box 83070 - 80100\nMOMBASA, KENYA\nTel No. +254 114 591 868\ninfo@primeteabrokers.com'
+        # worksheet.insert_textbox(row, col, text, options)
+            
+        empire_template.active.merge_cells('A' + str(tax_summary) + ':B' + str(tax_summary))
+        empire_template.active.merge_cells('C' + str(tax_summary) + ':D' + str(tax_summary))
+        empire_template.active.merge_cells('E' + str(tax_summary) + ':F' + str(tax_summary))
+        empire_template.active.merge_cells('G' + str(tax_summary) + ':H' + str(tax_summary))
+        empire_template.active.merge_cells('I' + str(tax_summary) + ':J' + str(tax_summary))
+        empire_template.active.merge_cells('A' + str(tax_summary-1) + ':B' + str(tax_summary-1))
+        empire_template.active.merge_cells('C' + str(tax_summary-1) + ':D' + str(tax_summary-1))
+        empire_template.active.merge_cells('E' + str(tax_summary-1) + ':F' + str(tax_summary-1))
+        empire_template.active.merge_cells('G' + str(tax_summary-1) + ':H' + str(tax_summary-1))
+        empire_template.active.merge_cells('I' + str(tax_summary-1) + ':J' + str(tax_summary-1))
+        
+        empire_template.active.title = invoice_file
+        
+        empire_template.save(filename=dest_save_path)
+        
+        return _filename
+
+class PopulateInvoice():
+    def fill_lots(custom_values):
+        counter = int(custom_values['invoice_number'])
+        dirs = list()
+        dirs_alt = list()
+        for buyer in BUYERS_RELATION:
+            dirs.append(
+                GenerateInvoice({
+                    buyer: BUYERS_RELATION[buyer]
+                }, custom_values, counter, 'default')
+            )
+            dirs_alt.append(
+                GenerateInvoice({
+                    buyer: BUYERS_RELATION[buyer]
+                }, custom_values, counter, 'alt')
+            )
+            counter += 1
+        CloseInvoiceNumber(counter, custom_values['auction_Pid'])
+        return {
+            'dirs': dirs,
+            'dirs_alt': dirs_alt
+        }
+        
+def INVOICEGENERATOR(input_data, custom_data):
+    StackGenerator(input_data)
+    return PopulateInvoice.fill_lots(custom_data)

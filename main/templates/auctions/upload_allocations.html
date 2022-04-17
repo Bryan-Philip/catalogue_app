@@ -1,0 +1,85 @@
+{% block content %}
+
+<div
+  class="flex flex-col w-auto px-4 py-8 bg-white rounded-lg shadow sm:px-6 md:px-8 lg:px-10 mx-auto"
+>
+  <div
+    class="self-center mb-2 text-xl font-light text-gray-800 sm:text-2xl"
+  >
+    Upload Allocations
+  </div>
+  
+  <div class="p-6 mt-8">
+
+    <div class="flex flex-col mb-2">
+        <div class="relative">
+            <fieldset name="Upload allocations">
+                {% if msg_allocations %} {% autoescape off %} {{ msg_allocations }} {% endautoescape %} {% endif %}
+                <div id="msg-allocations"></div>
+                <p>
+                    {% csrf_token %}
+                    <input type="hidden" name="year" value="{{year}}" id="auction-year"/>
+                    <input type="hidden" name="id" value="{{data.id}}" id="auction-id"/>
+                    <input type="file" id="multiFiles" name="files[]" multiple="multiple"
+                        accept="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                        class="py-2 px-4 focus:ring-blue-500 focus:ring-offset-blue-200 text-black w-full transition ease-in duration-200 text-center text-base font-semibold shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 rounded-lg mb-6"/>
+                    <button
+                        id="upload-allocations"
+                        class="py-2 px-4 bg-blue-600 hover:bg-blue-700 focus:ring-blue-500 focus:ring-offset-blue-200 text-white w-full transition ease-in duration-200 text-center text-base font-semibold shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 rounded-lg"
+                    >
+                        Upload
+                    </button>
+                </p>
+            </fieldset>
+        </div>
+      </div>
+    
+    <script type="text/javascript">
+        $(document).ready(function (e) {
+            $('#upload-allocations').on('click', function () {
+                var form_data = new FormData();
+                var ins = document.getElementById('multiFiles').files.length;
+                
+                if(ins == 0) {
+                    $('#msg-allocations').html('<span style="color:red">Select at least one file</span>');
+                    return;
+                }
+                
+                for (var x = 0; x < ins; x++) {
+                    form_data.append("files[]", document.getElementById('multiFiles').files[x]);
+                }
+                
+                csrf_token = $('input[name="csrfmiddlewaretoken"]').val();
+                auction_year = $('#auction-year').val()
+                auction_id = $('#auction-id').val()
+                                
+                form_data.append("csrfmiddlewaretoken", csrf_token);
+                form_data.append("auction-id", auction_id);
+                form_data.append("auction-year", auction_year);
+
+                console.log(auction_year)
+                console.log(auction_id)
+                
+                $.ajax({
+                    url: '/upload_allocations',
+                    dataType: 'json',
+                    cache: false,
+                    contentType: false,
+                    processData: false,
+                    data: form_data,
+                    type: 'post',
+                    success: function (response) {
+                        $('#msg-allocations').html(response.msg_allocations);
+                        $('#multiFiles').val('')
+                    },
+                    error: function (response) {
+                        $('#msg-allocations').html(response.message);
+                    }
+                });
+            });
+        });
+    </script>
+  </div>
+</div>
+
+{% endblock content %}
