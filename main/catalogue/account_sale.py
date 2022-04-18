@@ -478,7 +478,7 @@ def GenerateAccountSale(data, custom_values, counter, type="default"):
         address_line2 = formatAddress(warehouse_address)[0]
         address_line3 = formatAddress(warehouse_address)[1]
         meta_relation = {
-            'account_sale_number':  account_sale_number_alt,
+            'account_sale_number': account_sale_number_alt,
             'sale_date':  sale_date,
             'sale_date_alt': sale_date,
             'prompt_date': prompt_date,

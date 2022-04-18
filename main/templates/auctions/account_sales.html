@@ -3,7 +3,7 @@
 {% if account_sales %}
 <div class="h-auto border-2 border-gray-400 p-4 rounded-lg">
     {% for batch in account_sales %}
-        <p>Account Sale generated on: {{batch.date}}</p>
+        <p>Account Sales generated on: {{batch.date}}</p>
         {% for file in batch.files %}
             <div class="bg-white overflow-hidden inline-block shadow rounded-lg w-40 md:w-40 relative">
                 <i class="h-16 w-16 rounded-full absolute opacity-50 -top-1 -right-12 fa fa-file text-black text-2xl"></i>
