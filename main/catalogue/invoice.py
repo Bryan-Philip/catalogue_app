@@ -388,6 +388,7 @@ NUMBER_FORMAT_CELLS = list()
 def PopulateRow(sheet, level, row_data, catalogue_data):
     global NUMBER_FORMAT_CELLS
     NUMBER_FORMAT_CELLS = list()
+    print(row_data)
     for data in DATA_SALE:
         mark = row_data['mark']
         warehouse = DatabaseQueryProducerCompany(mark)
@@ -422,132 +423,184 @@ def GetInvoiceWarehouse(catalogue_data, invoice_number):
                     lot_warehouse = data['warehouse']
     return lot_warehouse
 
-def GenerateInvoice(data, custom_values, counter, type="default"):
+def GetInvoiceCompany(catalogue_data, invoice_number):
+    lot_company = None
+    for data in catalogue_data:
+        for lot in data:
+            if(lot == 'invoice_number'):
+                if(data['invoice_number'] == invoice_number):
+                    lot_company = data['company']
+    return lot_company
+
+def GenerateInvoice(data, custom_values, counter, buyer):
     folder='media/resources/'
-    fs = FileSystemStorage(location=folder)
-    template_default = fs.open('EMPIRE INVOICE TEMPLATE.xlsx', 'rb+')
-    template_alt = fs.open('EMPIRE INVOICE TEMPLATE ALT.xlsx', 'rb+')
-    if(type == 'default'):
-        file_data = template_default
-    else:
-        file_data = template_alt
     
-    empire_template = load_workbook(filename = file_data)
-    invoice_number = GenerateInvoiceNumber(custom_values['auction_number'], counter)['number']
-    sale_date = custom_values['sale_date']
-    prompt_date = custom_values['prompt_date']
-        
     catalogue_data = custom_values['catalogue_data']
-    invoice_data = custom_values['invoice_data']
     folder='media/documents/catalogue_data'
     fsc = FileSystemStorage(location=folder)
     
     with fsc.open(catalogue_data, 'rb+') as fcc_file:
         file_datac = json.load(fcc_file)
-
-    # print(file_datac)
-
-    invoice_file = GenerateInvoiceNumber(custom_values['auction_number'], counter)['file']
     
-    fs_save_folder = 'media/documents/invoices/'
-    
-    if(type == 'default'):
-        _filename = 'Invoice_' + invoice_file + '.xlsx'
-    else:
-        _filename = 'Invoice__' + invoice_file + '.xlsx'
-
-    dest_save_path = fs_save_folder + _filename
-    
+    LOT_PTBL = {buyer: list()}
+    LOT_KTDA = {buyer: list()}
+            
     for buyer in data:
-        if(buyer == 'CKLB'):
-            buyer_company = DatabaseQueryBuyerCompany('CKL')
-        elif(buyer == 'JFLB'):
-            buyer_company = DatabaseQueryBuyerCompany('JFL')
-        else: 
-            buyer_company = DatabaseQueryBuyerCompany(buyer)
-        if(buyer == 'CKLB'):
-            buyer_address = DatabaseQueryBuyerAddress('CKL')
-        elif(buyer == 'JFLB'):
-            buyer_address = DatabaseQueryBuyerAddress('JFL')
-        else: 
-            buyer_address = DatabaseQueryBuyerAddress(buyer)
-        code = buyer
-        address_line1 = buyer_company
-        address_line2 = formatAddress(buyer_address)[0]
-        address_line3 = formatAddress(buyer_address)[1]
-        meta_relation = {
-            'buyer_code': 'BUYER CODE: ' + code,
-            'invoice_number': 'INVOICE NO: ' + invoice_number,
-            'sale_date': 'Sale Date: ' + sale_date,
-            'prompt_date': 'Prompt Date: ' + prompt_date,
-            'receiver_address_line1': address_line1,
-            'receiver_address_line2': address_line2,
-            'receiver_address_line3': address_line3,
-            'auction_number': custom_values['auction_number']
-        }
-        lot_start = 13
-        lot_limit_start = lot_start
-        subtotals = 14
-        tax_summary = 19
         lot = data[buyer]
-        data_length = len(lot)
-        subtotals += data_length-1
-        tax_summary += data_length-1
-        if(data_length > 1):
-            empire_template.active.insert_rows(25, data_length-1)
-            empire_template.active.insert_rows(lot_start, data_length-1)
-        NUMBER_CELLS = list()
         for lot_data in lot:
-            # NUMBER_CELLS.append(PopulateRow(empire_template.active, lot_start, lot_data, file_datac))
-            NUMBER_CELLS += [*PopulateRow(empire_template.active, lot_start, lot_data, file_datac), *NUMBER_CELLS]
-            lot_start += 1
-        for cell in NUMBER_CELLS:
-            empire_template.active[cell].number_format = '$#,##0.00'
-        lot_end = lot_start-1
-        SUMMARY_RELATION = {}
-        # print(lot_end+1)
-        for subtotal in DATA_INVOICE_SUBTOTALS:
-            empire_template.active[DATA_INVOICE_SUBTOTALS[subtotal]+str(subtotals)] = '=SUM(' + DATA_INVOICE_SUBTOTALS[subtotal] + str(lot_limit_start) + ':' + DATA_INVOICE_SUBTOTALS[subtotal] + str(lot_end) + ')'
-            SUMMARY_RELATION[subtotal] = '=' + DATA_INVOICE_SUBTOTALS[subtotal]+str(subtotals)
-        # print(subtotals)
-        # print(tax_summary)
-        # print(SUMMARY_RELATION)
-        for summary in DATA_INVOICE_TAX_SUMMARY:
-            if(summary != 'gross'):
-                empire_template.active[DATA_INVOICE_TAX_SUMMARY[summary]+str(tax_summary)] = SUMMARY_RELATION[summary]
-                empire_template.active[DATA_INVOICE_TAX_SUMMARY[summary]+str(tax_summary)].number_format = '$#,##0.00'
+            invoice_number = lot_data['invoice_number_buyer']
+            lot_company = GetInvoiceCompany(file_datac, invoice_number)
+            if lot_company == 'KTDA':
+                LOT_KTDA[buyer].append(lot_data)
             else:
-                empire_template.active[DATA_INVOICE_TAX_SUMMARY[summary]+str(tax_summary)] = '=SUM(' + DATA_INVOICE_TAX_SUMMARY['amount'] + str(tax_summary) + ':' + DATA_INVOICE_TAX_SUMMARY['brokerage'] + str(tax_summary) + ')'
-                empire_template.active[DATA_INVOICE_TAX_SUMMARY[summary]+str(tax_summary)].number_format = '$#,##0.00'
-        for meta in DATA_INVOICE_META:
-            empire_template.active[DATA_INVOICE_META[meta]] = meta_relation[meta]
+                LOT_PTBL[buyer].append(lot_data)
+                   
+    print('---- this is lot ptbl ----')             
+    print(LOT_PTBL)
+    print('---- this is lot ptbl ----')
+    
+    def _Generate(data, buyer, custom_values, type="default"):
+        folder='media/resources/'
+        fs = FileSystemStorage(location=folder)
+        template_default = fs.open('EMPIRE INVOICE TEMPLATE.xlsx', 'rb+')
+        template_alt = fs.open('EMPIRE INVOICE TEMPLATE ALT.xlsx', 'rb+')
+        
+        catalogue_data = custom_values['catalogue_data']
+        invoice_data = custom_values['invoice_data']
+        folder='media/documents/catalogue_data'
+        fsc = FileSystemStorage(location=folder)
+        
+        with fsc.open(catalogue_data, 'rb+') as fcc_file:
+            file_datac = json.load(fcc_file)
+
+        invoice_file = GenerateInvoiceNumber(custom_values['auction_number'], counter)['file']
+        invoice_file_alt = GenerateInvoiceNumber(custom_values['auction_number'], counter+1)['file']
+        
+        fs_save_folder = 'media/documents/invoices/'
+        
+        invoice_number = GenerateInvoiceNumber(custom_values['auction_number'], counter)['number']
+        invoice_number_alt = GenerateInvoiceNumber(custom_values['auction_number'], counter+1)['number']
+        
+        if type != 'default':
+            invoice_number = invoice_number_alt
+        
+        sale_date = custom_values['sale_date']
+        prompt_date = custom_values['prompt_date']
+        if(type == 'default'):
+            file_data = template_default
+        else:
+            file_data = template_alt
+        
+        empire_template = load_workbook(filename = file_data)
+        
+        if(type == 'default'):
+            _filename = 'Invoice_' + '(' + buyer + ')' + invoice_file + '.xlsx'
+        else:
+            _filename = 'Invoice__' + '(' + buyer + ')' + invoice_file_alt + '.xlsx'
+        
+        dest_save_path = fs_save_folder + _filename
+        for buyer in data:
+            if(buyer == 'CKLB'):
+                buyer_company = DatabaseQueryBuyerCompany('CKL')
+            elif(buyer == 'JFLB'):
+                buyer_company = DatabaseQueryBuyerCompany('JFL')
+            else: 
+                buyer_company = DatabaseQueryBuyerCompany(buyer)
+            if(buyer == 'CKLB'):
+                buyer_address = DatabaseQueryBuyerAddress('CKL')
+            elif(buyer == 'JFLB'):
+                buyer_address = DatabaseQueryBuyerAddress('JFL')
+            else: 
+                buyer_address = DatabaseQueryBuyerAddress(buyer)
+            code = buyer
+            address_line1 = buyer_company
+            address_line2 = formatAddress(buyer_address)[0]
+            address_line3 = formatAddress(buyer_address)[1]
+            meta_relation = {
+                'buyer_code': 'BUYER CODE: ' + code,
+                'invoice_number': 'INVOICE NO: ' + invoice_number,
+                'sale_date': 'Sale Date: ' + sale_date,
+                'prompt_date': 'Prompt Date: ' + prompt_date,
+                'receiver_address_line1': address_line1,
+                'receiver_address_line2': address_line2,
+                'receiver_address_line3': address_line3,
+                'auction_number': custom_values['auction_number']
+            }
+            lot_start = 13
+            lot_limit_start = lot_start
+            subtotals = 14
+            tax_summary = 19
+            lot = data[buyer]
+            data_length = len(lot)
+            subtotals += data_length-1
+            tax_summary += data_length-1
+            if(data_length > 1):
+                empire_template.active.insert_rows(25, data_length-1)
+                empire_template.active.insert_rows(lot_start, data_length-1)
+            NUMBER_CELLS = list()
+            for lot_data in lot:
+                # NUMBER_CELLS.append(PopulateRow(empire_template.active, lot_start, lot_data, file_datac))
+                NUMBER_CELLS += [*PopulateRow(empire_template.active, lot_start, lot_data, file_datac), *NUMBER_CELLS]
+                lot_start += 1
+            for cell in NUMBER_CELLS:
+                empire_template.active[cell].number_format = '$#,##0.00'
+            lot_end = lot_start-1
+            SUMMARY_RELATION = {}
+            # print(lot_end+1)
+            for subtotal in DATA_INVOICE_SUBTOTALS:
+                empire_template.active[DATA_INVOICE_SUBTOTALS[subtotal]+str(subtotals)] = '=SUM(' + DATA_INVOICE_SUBTOTALS[subtotal] + str(lot_limit_start) + ':' + DATA_INVOICE_SUBTOTALS[subtotal] + str(lot_end) + ')'
+                SUMMARY_RELATION[subtotal] = '=' + DATA_INVOICE_SUBTOTALS[subtotal]+str(subtotals)
+            # print(subtotals)
+            # print(tax_summary)
+            # print(SUMMARY_RELATION)
+            for summary in DATA_INVOICE_TAX_SUMMARY:
+                if(summary != 'gross'):
+                    empire_template.active[DATA_INVOICE_TAX_SUMMARY[summary]+str(tax_summary)] = SUMMARY_RELATION[summary]
+                    empire_template.active[DATA_INVOICE_TAX_SUMMARY[summary]+str(tax_summary)].number_format = '$#,##0.00'
+                else:
+                    empire_template.active[DATA_INVOICE_TAX_SUMMARY[summary]+str(tax_summary)] = '=SUM(' + DATA_INVOICE_TAX_SUMMARY['amount'] + str(tax_summary) + ':' + DATA_INVOICE_TAX_SUMMARY['brokerage'] + str(tax_summary) + ')'
+                    empire_template.active[DATA_INVOICE_TAX_SUMMARY[summary]+str(tax_summary)].number_format = '$#,##0.00'
+            for meta in DATA_INVOICE_META:
+                empire_template.active[DATA_INVOICE_META[meta]] = meta_relation[meta]
+                
+            # workbook = xlsxwriter.Workbook(dest_save_path)
+            # worksheet = workbook.add_worksheet()
+            # row = 1
+            # col = 3
+            # options = {
+            #     'fill': {'none': True},
+            # }
+            # text = 'PRIME TEA BROKERS LIMITED\n1st Floor Suite 4, Rex House, Moi Avenue\nP.O. Box 83070 - 80100\nMOMBASA, KENYA\nTel No. +254 114 591 868\ninfo@primeteabrokers.com'
+            # worksheet.insert_textbox(row, col, text, options)
+                
+            empire_template.active.merge_cells('A' + str(tax_summary) + ':B' + str(tax_summary))
+            empire_template.active.merge_cells('C' + str(tax_summary) + ':D' + str(tax_summary))
+            empire_template.active.merge_cells('E' + str(tax_summary) + ':F' + str(tax_summary))
+            empire_template.active.merge_cells('G' + str(tax_summary) + ':H' + str(tax_summary))
+            empire_template.active.merge_cells('I' + str(tax_summary) + ':J' + str(tax_summary))
+            empire_template.active.merge_cells('A' + str(tax_summary-1) + ':B' + str(tax_summary-1))
+            empire_template.active.merge_cells('C' + str(tax_summary-1) + ':D' + str(tax_summary-1))
+            empire_template.active.merge_cells('E' + str(tax_summary-1) + ':F' + str(tax_summary-1))
+            empire_template.active.merge_cells('G' + str(tax_summary-1) + ':H' + str(tax_summary-1))
+            empire_template.active.merge_cells('I' + str(tax_summary-1) + ':J' + str(tax_summary-1))
             
-        # workbook = xlsxwriter.Workbook(dest_save_path)
-        # worksheet = workbook.add_worksheet()
-        # row = 1
-        # col = 3
-        # options = {
-        #     'fill': {'none': True},
-        # }
-        # text = 'PRIME TEA BROKERS LIMITED\n1st Floor Suite 4, Rex House, Moi Avenue\nP.O. Box 83070 - 80100\nMOMBASA, KENYA\nTel No. +254 114 591 868\ninfo@primeteabrokers.com'
-        # worksheet.insert_textbox(row, col, text, options)
+            empire_template.active.title = invoice_file
             
-        empire_template.active.merge_cells('A' + str(tax_summary) + ':B' + str(tax_summary))
-        empire_template.active.merge_cells('C' + str(tax_summary) + ':D' + str(tax_summary))
-        empire_template.active.merge_cells('E' + str(tax_summary) + ':F' + str(tax_summary))
-        empire_template.active.merge_cells('G' + str(tax_summary) + ':H' + str(tax_summary))
-        empire_template.active.merge_cells('I' + str(tax_summary) + ':J' + str(tax_summary))
-        empire_template.active.merge_cells('A' + str(tax_summary-1) + ':B' + str(tax_summary-1))
-        empire_template.active.merge_cells('C' + str(tax_summary-1) + ':D' + str(tax_summary-1))
-        empire_template.active.merge_cells('E' + str(tax_summary-1) + ':F' + str(tax_summary-1))
-        empire_template.active.merge_cells('G' + str(tax_summary-1) + ':H' + str(tax_summary-1))
-        empire_template.active.merge_cells('I' + str(tax_summary-1) + ':J' + str(tax_summary-1))
+            empire_template.save(filename=dest_save_path)
+            
+            return _filename
+    
+    _dir = None
+    _dir_alt = None
+    if len(LOT_KTDA[buyer]) >= 1:
+        _dir_alt = _Generate(LOT_KTDA, buyer, custom_values, "alt")
+    if len(LOT_PTBL[buyer]) >= 1:
+        _dir = _Generate(LOT_PTBL, buyer, custom_values, "default")
         
-        empire_template.active.title = invoice_file
-        
-        empire_template.save(filename=dest_save_path)
-        
-        return _filename
+    return {
+        'file': _dir,
+        'file_alt': _dir_alt
+    }
 
 class PopulateInvoice():
     def fill_lots(custom_values):
@@ -555,16 +608,15 @@ class PopulateInvoice():
         dirs = list()
         dirs_alt = list()
         for buyer in BUYERS_RELATION:
-            dirs.append(
-                GenerateInvoice({
-                    buyer: BUYERS_RELATION[buyer]
-                }, custom_values, counter, 'default')
-            )
-            dirs_alt.append(
-                GenerateInvoice({
-                    buyer: BUYERS_RELATION[buyer]
-                }, custom_values, counter, 'alt')
-            )
+            buyer_dirs = GenerateInvoice({
+                buyer: BUYERS_RELATION[buyer]
+            }, custom_values, counter, buyer)
+            print(buyer_dirs)
+            if buyer_dirs['file']:
+                dirs.append(buyer_dirs['file'])
+            if buyer_dirs['file_alt']:
+                dirs_alt.append(buyer_dirs['file_alt'])
+                counter += 1
             counter += 1
         CloseInvoiceNumber(counter, custom_values['auction_Pid'])
         return {

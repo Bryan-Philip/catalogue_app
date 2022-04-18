@@ -28,7 +28,7 @@ def LotQuery():
 LOT_COUNTER = LotQuery()
 def LotCounter():
     global LOT_COUNTER
-    if(LOT_COUNTER < 30000):
+    if(LOT_COUNTER < 23600):
         LOT_COUNTER += 1
     else:
         LOT_COUNTER = 23000
