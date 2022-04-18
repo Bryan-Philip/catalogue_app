@@ -469,7 +469,7 @@ def PopulateInitialData():
 
     lookup = set()
     UNIQUE_MARKS = [x for x in UNIQUE_MARKS if x not in lookup and lookup.add(x) is None]
-    UNIQUE_MARKS = ['SIAN', 'SIOMO', 'EMROK', 'TULON', 'SARMA', 'TEGAT', 'CUPATEA', 'KABIANGA', 'KIPSINENDE']
+    UNIQUE_MARKS = ['SIOMO', 'EMROK', 'TULON', 'SARMA', 'TEGAT', 'CUPATEA', 'KABIANGA', 'KIPSINENDE', 'SIAN']
         
     sales = 0
     for sale in populated:

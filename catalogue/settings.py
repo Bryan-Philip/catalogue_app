@@ -81,8 +81,8 @@ DATABASES = {
         # 'ENGINE': 'django.db.backends.sqlite3', --> sqlite
         # 'NAME': BASE_DIR / 'db.sqlite3', --> sqlite
         'NAME': 'catalogue',
-        'USER': 'cypher',
-        'PASSWORD': 'cypher',
+        'USER': 'winston',
+        'PASSWORD': 'winston',
         'HOST':'localhost',
         'PORT':'3306',
     }
