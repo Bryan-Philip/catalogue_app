@@ -1,5 +1,6 @@
 from openpyxl import cell
 from openpyxl.styles import PatternFill, Border, Side, Alignment, Protection, Font, NamedStyle
+from openpyxl.styles.borders import Border, Side, BORDER_THIN, BORDER_MEDIUM
 
 def readExcel():
     return
@@ -104,6 +105,32 @@ FORMAT_SUBTITLE = NamedStyle(
     ),
 )
 
+FORMAT_ARIAL_11 = NamedStyle(
+    name="arial_nova_light_11",
+    font = Font(
+        name='Arial Nova Light',
+        size=11,
+        bold=False,
+    ),
+    alignment = Alignment(
+        horizontal='center',
+        vertical='center'
+    ),
+)
+
+FORMAT_ARIAL_11_BOLD = NamedStyle(
+    name="arial_nova_light_11_bold",
+    font = Font(
+        name='Arial Nova Light',
+        size=11,
+        bold=True,
+    ),
+    alignment = Alignment(
+        horizontal='center',
+        vertical='center'
+    ),
+)
+
 class Format:
     def fontSize(cell: cell, fontsize: float):
         cell.font += Font(size=fontsize)
@@ -113,15 +140,18 @@ class Format:
         cell.style = FORMAT_TITLE
     def formatSubTitle(cell: cell):
         cell.style = FORMAT_SUBTITLE
+    def formatArial11(cell: cell):
+        cell.style = FORMAT_ARIAL_11
+    def formatArial11Bold(cell: cell):
+        cell.style = FORMAT_ARIAL_11_BOLD
 
+medium_border = Border(
+    top=Side(border_style=BORDER_MEDIUM, color='00000000'),
+    bottom=Side(border_style=BORDER_MEDIUM, color='00000000')
+)
 
-# ft = Font(color="FF0000")
-# a1 = sheet['A3']
-# a1.font = ft
-
-# print(a1.value)
-
-# a1.font = Font(color="FF0000", italic=True)
-
-# wb.close()
-# wb.save('populated.xlsx')
+subtotals_border = Border(
+    top=Side(border_style=BORDER_THIN, color='00000000'),
+    bottom=Side(border_style=BORDER_THIN, color='00000000'),
+    left=Side(border_style=BORDER_THIN, color='00000000')
+)

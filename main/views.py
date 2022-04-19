@@ -409,6 +409,7 @@ def generate_invoices_data(request):
             'sale_date': values['sale_date'],
             'prompt_date': values['prompt_date'],
             'auction_number': values['auction_id'] + '-' + last2(values['auction_year']),
+            'auction_number_full': values['auction_year'] + '/' + values['auction_id'],
             'catalogue_data': values['catalogue_data'],
             'invoice_data': values['invoice_data'],
             'invoice_number': values['invoice_number'],

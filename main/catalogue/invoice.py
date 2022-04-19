@@ -345,17 +345,60 @@ def formatAddress(address):
         return data
     if(address !=  None):
         if(re.search(',', address)):
+            # P.O. Box search
+            if(re.search('P.O.Box', address)):
+                address = address.replace('P.O.Box', 'P.O. BOX')
+            elif(re.search('P.O. Box', address)):
+                address = address.replace('P.O. Box', 'P.O. BOX')
+            elif(re.search('P.O. Box', address)):
+                address == address
+            elif(re.search('Box', address)):
+                address = address.replace('Box', 'P.O. BOX')
+            else:
+                address = 'P.O. BOX ' + address
+            # (-) Hyphen search
+            if(re.search(' - ', address)):
+                address == address
+            elif(re.search('- ', address)):
+                address = address.replace('- ', ' - ')
+            elif(re.search(' -', address)):
+                address = address.replace(' -', ' - ')
+            elif(re.search('-', address)):
+                address = address.replace('-', ' - ')
+            # Format
+            address = address.upper()
             return splitAddress(address)
         else:
-            counter = 0
             if(re.search('Mombasa', address)):
-                address = address.replace('Mombasa', ',Mombasa')
+                address = address.replace('Mombasa', ',MOMBASA')
             elif(re.search('Nairobi', address)):
-                address = address.replace('Nairobi', ',Nairobi')
+                address = address.replace('Nairobi', ',NAIROBI')
             elif(re.search('Kericho', address)):
-                address = address.replace('Kericho', ',Kericho')
+                address = address.replace('Kericho', ',KERICHO')
             else:
                 address += ',Nairobi'
+            # P.O. Box search
+            if(re.search('P.O.Box', address)):
+                address = address.replace('P.O.Box', 'P.O. BOX')
+            elif(re.search('P.O. Box', address)):
+                address = address.replace('P.O. Box', 'P.O. BOX')
+            elif(re.search('P.O. Box', address)):
+                address == address
+            elif(re.search('Box', address)):
+                address = address.replace('Box', 'P.O. BOX')
+            else:
+                address = 'P.O. BOX ' + address
+            # (-) Hyphen search
+            if(re.search(' - ', address)):
+                address == address
+            elif(re.search('- ', address)):
+                address = address.replace('- ', ' - ')
+            elif(re.search(' -', address)):
+                address = address.replace(' -', ' - ')
+            elif(re.search('-', address)):
+                address = address.replace('-', ' - ')
+            # Format
+            address = address.upper()
             return splitAddress(address)
     else:
         return ['', '']
@@ -385,10 +428,12 @@ def populate_number(val, level):
         counter += 1
 
 NUMBER_FORMAT_CELLS = list()
+COLLECTIVE_CELL_DATA = list()
 def PopulateRow(sheet, level, row_data, catalogue_data):
     global NUMBER_FORMAT_CELLS
+    global COLLECTIVE_CELL_DATA
     NUMBER_FORMAT_CELLS = list()
-    print(row_data)
+    COLLECTIVE_CELL_DATA = list()
     for data in DATA_SALE:
         mark = row_data['mark']
         warehouse = DatabaseQueryProducerCompany(mark)
@@ -404,14 +449,22 @@ def PopulateRow(sheet, level, row_data, catalogue_data):
                 sheet[str(str(DATA_SALE_RELATION[data])+str(level))] = int(row_data[data])
             else:
                 sheet[str(str(DATA_SALE_RELATION[data])+str(level))] = row_data[data]
-            Format.GeneralCenter(sheet[str(str(DATA_SALE_RELATION[data])+str(level))])
+            Format.formatArial11(sheet[str(str(DATA_SALE_RELATION[data])+str(level))])
+            cell = populate_number(DATA_SALE_RELATION[data], level)
+            if data[0] == 'price':
+                NUMBER_FORMAT_CELLS.append(cell)
+            COLLECTIVE_CELL_DATA.append(cell)
         else:
             sheet[populate_number(DATA_SALE_RELATION[data], level)] = populate_number(DATA_SALE[data], level)
             sheet[populate_number(DATA_SALE_RELATION[data], level)].number_format = '$#,##0.00'
-            Format.GeneralCenter(sheet[populate_number(DATA_SALE_RELATION[data], level)])
+            Format.formatArial11(sheet[populate_number(DATA_SALE_RELATION[data], level)])
             cell = populate_number(DATA_SALE_RELATION[data], level)
             NUMBER_FORMAT_CELLS.append(cell)
-    return NUMBER_FORMAT_CELLS
+            COLLECTIVE_CELL_DATA.append(cell)
+    return { 
+        'number_format_cells': NUMBER_FORMAT_CELLS,
+        'collective_cell_data': COLLECTIVE_CELL_DATA,
+    }
 
 
 def GetInvoiceWarehouse(catalogue_data, invoice_number):
@@ -454,10 +507,6 @@ def GenerateInvoice(data, custom_values, counter, buyer):
                 LOT_KTDA[buyer].append(lot_data)
             else:
                 LOT_PTBL[buyer].append(lot_data)
-                   
-    print('---- this is lot ptbl ----')             
-    print(LOT_PTBL)
-    print('---- this is lot ptbl ----')
     
     def _Generate(data, buyer, custom_values, type="default"):
         folder='media/resources/'
@@ -524,7 +573,7 @@ def GenerateInvoice(data, custom_values, counter, buyer):
                 'receiver_address_line1': address_line1,
                 'receiver_address_line2': address_line2,
                 'receiver_address_line3': address_line3,
-                'auction_number': custom_values['auction_number']
+                'auction_number': custom_values['auction_number_full']
             }
             lot_start = 13
             lot_limit_start = lot_start
@@ -538,10 +587,16 @@ def GenerateInvoice(data, custom_values, counter, buyer):
                 empire_template.active.insert_rows(25, data_length-1)
                 empire_template.active.insert_rows(lot_start, data_length-1)
             NUMBER_CELLS = list()
+            COLLECTIVE_CELLS = list()
             for lot_data in lot:
                 # NUMBER_CELLS.append(PopulateRow(empire_template.active, lot_start, lot_data, file_datac))
-                NUMBER_CELLS += [*PopulateRow(empire_template.active, lot_start, lot_data, file_datac), *NUMBER_CELLS]
+                CELL_DATA = PopulateRow(empire_template.active, lot_start, lot_data, file_datac)
+                NUMBER_CELLS += [*CELL_DATA['number_format_cells'], *NUMBER_CELLS]
+                COLLECTIVE_CELLS += [*CELL_DATA['collective_cell_data'], *COLLECTIVE_CELLS]
                 lot_start += 1
+            # ------ GLOBAL FORMATTING --------
+            for cell in COLLECTIVE_CELLS:
+                Format.formatArial11(empire_template.active[cell])
             for cell in NUMBER_CELLS:
                 empire_template.active[cell].number_format = '$#,##0.00'
             lot_end = lot_start-1
@@ -550,6 +605,10 @@ def GenerateInvoice(data, custom_values, counter, buyer):
             for subtotal in DATA_INVOICE_SUBTOTALS:
                 empire_template.active[DATA_INVOICE_SUBTOTALS[subtotal]+str(subtotals)] = '=SUM(' + DATA_INVOICE_SUBTOTALS[subtotal] + str(lot_limit_start) + ':' + DATA_INVOICE_SUBTOTALS[subtotal] + str(lot_end) + ')'
                 SUMMARY_RELATION[subtotal] = '=' + DATA_INVOICE_SUBTOTALS[subtotal]+str(subtotals)
+                Format.formatArial11Bold(empire_template.active[DATA_INVOICE_SUBTOTALS[subtotal]+str(subtotals)])
+                empire_template.active[DATA_INVOICE_SUBTOTALS[subtotal]+str(subtotals)].border = medium_border
+                if subtotal != 'pkgs' and subtotal != 'net':
+                    empire_template.active[DATA_INVOICE_SUBTOTALS[subtotal]+str(subtotals)].number_format = '$#,##0.00'
             # print(subtotals)
             # print(tax_summary)
             # print(SUMMARY_RELATION)
@@ -583,6 +642,39 @@ def GenerateInvoice(data, custom_values, counter, buyer):
             empire_template.active.merge_cells('E' + str(tax_summary-1) + ':F' + str(tax_summary-1))
             empire_template.active.merge_cells('G' + str(tax_summary-1) + ':H' + str(tax_summary-1))
             empire_template.active.merge_cells('I' + str(tax_summary-1) + ':J' + str(tax_summary-1))
+            
+            Format.formatArial11Bold(empire_template.active[('A' + str(tax_summary))])
+            Format.formatArial11Bold(empire_template.active[('C' + str(tax_summary))])
+            Format.formatArial11Bold(empire_template.active[('E' + str(tax_summary))])
+            Format.formatArial11Bold(empire_template.active[('G' + str(tax_summary))])
+            Format.formatArial11Bold(empire_template.active[('I' + str(tax_summary))])
+            Format.formatArial11Bold(empire_template.active[('A' + str(tax_summary-1))])
+            Format.formatArial11Bold(empire_template.active[('C' + str(tax_summary-1))])
+            Format.formatArial11Bold(empire_template.active[('E' + str(tax_summary-1))])
+            Format.formatArial11Bold(empire_template.active[('G' + str(tax_summary-1))])
+            Format.formatArial11Bold(empire_template.active[('I' + str(tax_summary-1))])
+            
+            empire_template.active[('A' + str(tax_summary))].border = subtotals_border
+            empire_template.active[('C' + str(tax_summary))].border = subtotals_border
+            empire_template.active[('E' + str(tax_summary))].border = subtotals_border
+            empire_template.active[('G' + str(tax_summary))].border = subtotals_border
+            empire_template.active[('I' + str(tax_summary))].border = subtotals_border
+            empire_template.active[('A' + str(tax_summary-1))].border = subtotals_border
+            empire_template.active[('C' + str(tax_summary-1))].border = subtotals_border
+            empire_template.active[('E' + str(tax_summary-1))].border = subtotals_border
+            empire_template.active[('G' + str(tax_summary-1))].border = subtotals_border
+            empire_template.active[('I' + str(tax_summary-1))].border = subtotals_border
+            
+            empire_template.active[('A' + str(tax_summary))].number_format = '$#,##0.00'
+            empire_template.active[('C' + str(tax_summary))].number_format = '$#,##0.00'
+            empire_template.active[('E' + str(tax_summary))].number_format = '$#,##0.00'
+            empire_template.active[('G' + str(tax_summary))].number_format = '$#,##0.00'
+            empire_template.active[('I' + str(tax_summary))].number_format = '$#,##0.00'
+            empire_template.active[('A' + str(tax_summary-1))].number_format = '$#,##0.00'
+            empire_template.active[('C' + str(tax_summary-1))].number_format = '$#,##0.00'
+            empire_template.active[('E' + str(tax_summary-1))].number_format = '$#,##0.00'
+            empire_template.active[('G' + str(tax_summary-1))].number_format = '$#,##0.00'
+            empire_template.active[('I' + str(tax_summary-1))].number_format = '$#,##0.00'
             
             empire_template.active.title = invoice_file
             
