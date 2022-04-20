@@ -428,11 +428,13 @@ def populate_number(val, level):
         counter += 1
 
 NUMBER_FORMAT_CELLS = list()
+NUMBER_VOID_CELLS = list()
 COLLECTIVE_CELL_DATA = list()
 def PopulateRow(sheet, level, row_data, catalogue_data):
     global NUMBER_FORMAT_CELLS
     global COLLECTIVE_CELL_DATA
     NUMBER_FORMAT_CELLS = list()
+    NUMBER_VOID_CELLS = list()
     COLLECTIVE_CELL_DATA = list()
     for data in DATA_SALE:
         mark = row_data['mark']
@@ -451,8 +453,8 @@ def PopulateRow(sheet, level, row_data, catalogue_data):
                 sheet[str(str(DATA_SALE_RELATION[data])+str(level))] = row_data[data]
             Format.formatArial11(sheet[str(str(DATA_SALE_RELATION[data])+str(level))])
             cell = populate_number(DATA_SALE_RELATION[data], level)
-            if data[0] == 'price':
-                NUMBER_FORMAT_CELLS.append(cell)
+            if data == 'price':
+                NUMBER_VOID_CELLS.append(cell)
             COLLECTIVE_CELL_DATA.append(cell)
         else:
             sheet[populate_number(DATA_SALE_RELATION[data], level)] = populate_number(DATA_SALE[data], level)
@@ -464,6 +466,7 @@ def PopulateRow(sheet, level, row_data, catalogue_data):
     return { 
         'number_format_cells': NUMBER_FORMAT_CELLS,
         'collective_cell_data': COLLECTIVE_CELL_DATA,
+        'number_void_cells': NUMBER_VOID_CELLS
     }
 
 
@@ -562,7 +565,7 @@ def GenerateInvoice(data, custom_values, counter, buyer):
             else: 
                 buyer_address = DatabaseQueryBuyerAddress(buyer)
             code = buyer
-            address_line1 = buyer_company
+            address_line1 = buyer_company.upper()
             address_line2 = formatAddress(buyer_address)[0]
             address_line3 = formatAddress(buyer_address)[1]
             meta_relation = {
@@ -588,17 +591,21 @@ def GenerateInvoice(data, custom_values, counter, buyer):
                 empire_template.active.insert_rows(lot_start, data_length-1)
             NUMBER_CELLS = list()
             COLLECTIVE_CELLS = list()
+            NUMBER_VOID = list()
             for lot_data in lot:
                 # NUMBER_CELLS.append(PopulateRow(empire_template.active, lot_start, lot_data, file_datac))
                 CELL_DATA = PopulateRow(empire_template.active, lot_start, lot_data, file_datac)
                 NUMBER_CELLS += [*CELL_DATA['number_format_cells'], *NUMBER_CELLS]
                 COLLECTIVE_CELLS += [*CELL_DATA['collective_cell_data'], *COLLECTIVE_CELLS]
+                NUMBER_VOID += [*CELL_DATA['number_void_cells'], *NUMBER_VOID]
                 lot_start += 1
             # ------ GLOBAL FORMATTING --------
             for cell in COLLECTIVE_CELLS:
                 Format.formatArial11(empire_template.active[cell])
             for cell in NUMBER_CELLS:
                 empire_template.active[cell].number_format = '$#,##0.00'
+            for cell in NUMBER_VOID:
+                empire_template.active[cell].number_format = '#,##0.00'
             lot_end = lot_start-1
             SUMMARY_RELATION = {}
             # print(lot_end+1)

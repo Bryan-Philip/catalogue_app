@@ -139,6 +139,26 @@ def update_sale(request):
                             '''})
     else:
         return render(request, 'auctions/update_sale.html', )
+    
+@ensure_csrf_cookie
+def update_lot_number(request):
+    if request.method == "GET":
+        return render(request, 'auctions/update_lot_number.html', )
+    if request.method == 'POST':
+        values = request.POST
+        updateLot(values['lot_number'])
+        return JsonResponse({'msg_sale': '''
+                                <span id="message-sale" style="color: green;">Lot number successfully updated</span>
+                                <script>
+                                    $(function(){
+                                        setTimeout(() => {
+                                            $('#message-sale').slideUp("swing")
+                                        }, 2000)
+                                    })
+                                </script/>
+                            '''})
+    else:
+        return render(request, 'auctions/update_sale.html', )
 
 
 def handle_uploaded_allocations(f, filename):
@@ -251,6 +271,7 @@ def generate_catalogue(request, year, number):
                         auction_data['sales'] = json.loads(auction_data[val])
             break
         else: auction_data = None
+    lot = getCurrentLot()
     return render(
         request,
         'auctions/generate_catalogue.html',
@@ -259,6 +280,7 @@ def generate_catalogue(request, year, number):
             'year': year,
             'number': number,
             'data': auction_data,
+            'lot_number': lot,
         }
     )
 def generate_invoices(request, year, number):

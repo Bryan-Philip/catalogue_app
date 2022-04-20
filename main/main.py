@@ -2,6 +2,8 @@ from . import models
 import json
 from django.core.files.storage import FileSystemStorage
 from datetime import datetime
+from main.catalogue.connector import CONNECTOR
+from mysql.connector import connect, Error
 
 def updateJson(current, value, update=False):
     status = 'insert'
@@ -140,3 +142,24 @@ def updateSingleSale(id, value):
         a.save()
         return True
     else: return False
+
+def getCurrentLot():
+    try:
+        with connect(**CONNECTOR) as connection:
+            current_lot = '''SELECT `number` FROM `lot_number`'''
+            with connection.cursor() as cursor:
+                cursor.execute(current_lot)
+                row = cursor.fetchone()
+                return row[0]
+    except Error as e:
+            print(e)
+            
+def updateLot(lot_number):
+    try:
+        with connect(**CONNECTOR) as connection:
+            update_lot = '''UPDATE `lot_number` SET `number` = %s'''
+            with connection.cursor() as cursor:
+                cursor.execute(update_lot, (lot_number,))
+                connection.commit()
+    except Error as e:
+            print(e)

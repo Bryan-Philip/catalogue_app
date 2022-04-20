@@ -7,6 +7,7 @@ urlpatterns = [
     path('upload_sale', views.upload_sale, name='upload_sale'),
     path('update_allocation', views.update_allocation, name='update_allocation'),
     path('update_sale', views.update_sale, name='update_sale'),
+    path('update_lot_number', views.update_lot_number, name='update_lot_number'),
     path('generate_catalogue', views.generate_catalogue_data, name='generate_catalogue_data'),
     path('generate_invoices', views.generate_invoices_data, name='generate_invoices_data'),
     path('generate_account_sales', views.generate_account_sales_data, name='generate_account_sales_data'),

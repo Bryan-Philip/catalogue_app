@@ -2,7 +2,8 @@
 
     <div class="mx-auto h-auto max-w-7xl flex align-center justify-center flex-col">
         {% include './update_allocations.html' with year=year number=number %}
-        <div class="mx-auto max-w-3xl  bg-gray-300 rounded-lg border-gray-300 p-6">
+        <div class="mx-auto max-w-3xl bg-gray-300 rounded-lg border-gray-300 p-6">
+            {% include './update_lot_number.html' with lot_number=lot_number %}
             {% csrf_token %}
             <div class="flex items-center justify-center flex-col max-w-2xl mx-auto">
                 <p id="generate-alert-message" class="mt-2 mb-4"></p>

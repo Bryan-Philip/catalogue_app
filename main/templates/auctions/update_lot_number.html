@@ -1,0 +1,72 @@
+{% block content %}
+
+    <div class="bg-gray-200 p-4 rounded-lg">
+        <p class="font-bold text-center text-lg bg-gray-100 py-2 px-6 rounded-md w-max mx-auto">Current Lot Number</p>
+        <p class="msg-alert my-2"></p>
+        <div class="grid grid-cols-2 gap-4 updater">
+            {% csrf_token %}
+            <input type="text" class="w-full p-2 rounded-md border-2 border-gray-100 outline-none" id="lot-val" placeholder="Current lot: {{lot_number}}" value="{{lot_number}}"/>
+            <button id="update-lot-number" class="bg-pink-500 hover:bg-pink-700 py-2 px-4 w-full max-w-lg focus:ring-pink-500 focus:ring-offset-pink-600 text-white transition ease-in duration-200 text-center text-base font-semibold shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 rounded-lg">Update Lot Number</button>
+        </div>
+    </div>
+
+    <script type="text/javascript">
+        $(document).ready(function (e) {
+            button = $('#update-lot-number');
+            button.on('click', function (){
+                console.log('clicked')
+                var form_data = new FormData();
+                                
+                lot_number = Number($('#lot-val').val());
+                msg_alert = $(this).parents('.updater').siblings('.msg-alert');
+                csrf_token = $('input[name="csrfmiddlewaretoken"]').val();
+                                
+                form_data.append("csrfmiddlewaretoken", csrf_token);
+                form_data.append("lot_number", lot_number);
+
+                console.log(lot_number)
+
+                if(lot_number > 23599 || lot_number < 23000){
+                    allow = false
+                }
+                else {
+                    allow = true
+                }
+                
+                allow ?
+                    $.ajax({
+                        url: '/update_lot_number',
+                        dataType: 'json',
+                        cache: false,
+                        contentType: false,
+                        processData: false,
+                        data: form_data,
+                        type: 'post',
+                        success: function (response) {
+                            msg_alert.html(response.msg_sale);
+                        },
+                        error: function (response) {
+                            msg_alert.html(response.message);
+                        }
+                    })
+                : lot_number > 23599 ? (
+                    msg_alert.html('Lot Number cannot be greater than 23599'),
+                    setTimeout(() => {
+                        msg_alert.html('')
+                    }, 5000)
+                ) : lot_number < 23000 ? (
+                    msg_alert.html('Lot Number cannot be less than 23000'),
+                    setTimeout(() => {
+                        msg_alert.html('')
+                    }, 5000)
+                ) : (
+                    msg_alert.html('An unknown error has occurred, Try again!'),
+                    setTimeout(() => {
+                        msg_alert.html('')
+                    }, 5000)
+                )
+            });
+        });
+    </script>
+
+{% endblock content %}
