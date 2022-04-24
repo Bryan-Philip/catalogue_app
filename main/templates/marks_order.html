@@ -1,0 +1,157 @@
+{% block content %}
+{% load display_marks %}
+
+<style>
+    .slist {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .slist div {
+        margin: 4px;
+        padding: 10px;
+    }
+
+    .slist div.hint {
+        background: #696b6d;
+    }
+
+    .slist div.active {
+        border: 1px solid #f01f1f;
+        background: #da3c5e;
+    }
+</style>
+<div>
+    <div id="sortlist" class="w-40">
+        <p class="text-sm text-blue-500 font-bold">Drag to rearrange</p>
+        {% csrf_token %}
+        {% display_marks %}
+    </div>
+    <p id="order-alert" class="text-red-600 text-xs"></p>
+    <p id="msg-order"></p>
+    <button id="update-marks-order" class="relative left-1 mt-2 bg-blue-500 hover:bg-blue-700 py-2 w-32 focus:ring-blue-500 focus:ring-offset-blue-600 text-white transition ease-in duration-200 text-center font-semibold shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 rounded-md text-xs">Update Order</button>
+    <p class="text-xs mt-2">Order: <span id="marks-order"></span></p>
+</div>
+
+<script>
+    function getOrder() {
+        list = $('#sortlist').children('div')
+        order = {}
+        order_list = []
+        for (var i = 0; i < list.length; i++) {
+            checked = list.eq(i).children('input[name="order-check"]').prop('checked')
+            mark = list.eq(i).children('input[name="mark-value"]').val()
+            order[mark] = checked ? 1 : 0
+            checked ? order_list.push(mark) : ''
+        }
+        list_val = ''
+        for(var l = 0; l < order_list.length; l++){
+            list_val += `<span class="inline-block bg-green-400 p-0.5 px-1 text-white m-0.5 rounded-md">${order_list[l]}</span>`
+        }
+        $('#marks-order').html(list_val)
+        return { 'order': order, 'order_list': order_list }
+    }
+    function slist(target) {
+        target.classList.add("slist");
+        let items = target.getElementsByTagName("div"),
+            current = null;
+
+        for (let i of items) {
+            i.draggable = true;
+
+            i.ondragstart = (ev) => {
+                current = i;
+                for (let it of items) {
+                    current.classList.add('cursor-grab')
+                    if (it != current) {
+                        it.classList.add("hint");
+                    }
+                }
+            };
+
+            i.ondragenter = (ev) => {
+                if (i != current) {
+                    i.classList.add("active");
+                }
+            };
+
+            i.ondragleave = () => {
+                i.classList.remove("active");
+            };
+
+            i.ondragend = () => {
+                for (let it of items) {
+                    it.classList.remove("hint");
+                    it.classList.remove("active");
+                }
+            };
+
+            i.ondragover = (evt) => {
+                evt.preventDefault();
+            };
+
+            i.ondrop = (evt) => {
+                evt.preventDefault();
+                if (i != current) {
+                    let currentpos = 0,
+                        droppedpos = 0;
+                    for (let it = 0; it < items.length; it++) {
+                        if (current == items[it]) {
+                            currentpos = it;
+                        }
+                        if (i == items[it]) {
+                            droppedpos = it;
+                        }
+                    }
+                    if (currentpos < droppedpos) {
+                        i.parentNode.insertBefore(current, i.nextSibling);
+                    } else {
+                        i.parentNode.insertBefore(current, i);
+                    }
+                    getOrder()
+                    document.getElementById('order-alert').innerHTML = 'Unsaved changes! Update to sync changes'
+                }
+            };
+        }
+    }
+    window.addEventListener("DOMContentLoaded", () => {
+        slist(document.getElementById("sortlist"));
+    });
+    $(function () {
+        getOrder()
+        $('input[name="order-check"]').on('change', function(){
+            document.getElementById('order-alert').innerHTML = 'Unsaved changes! Update to sync changes'
+            getOrder()
+        })
+        $('#update-marks-order').on('click', function(){
+            console.log(getOrder()['order'])
+
+            form_data = new FormData()
+            form_data.append('order', JSON.stringify(getOrder()['order']))
+            csrf_token = $('input[name="csrfmiddlewaretoken"]').val();
+            form_data.append("csrfmiddlewaretoken", csrf_token);
+
+            $('#order-alert').html('')
+            msg_alert = $('#msg-order')
+
+            $.ajax({
+                url: '/marks_order',
+                dataType: 'json',
+                cache: false,
+                contentType: false,
+                processData: false,
+                data: form_data,
+                type: 'post',
+                success: function (response) {
+                    msg_alert.html(response.msg);
+                },
+                error: function (response) {
+                    msg_alert.html(response.msg);
+                }
+            });
+        })
+    });
+</script>
+
+{% endblock content %}

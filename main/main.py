@@ -108,7 +108,7 @@ def updateAccountSaleData(id, value):
     fs = FileSystemStorage(location=folder)
     a = models.Auctions.objects.get(Pid = id)
     filename = 'AccountSaleData_' + str(int(datetime.timestamp(datetime.now()))) + '.json'
-    a.invoice_data = filename
+    a.account_sale_data = filename
     a.save()
     with fs.open(filename, 'w') as outfile:
         json.dump(value, outfile, indent=4, default=str)
@@ -140,6 +140,13 @@ def updateSingleSale(id, value):
     if(new['status']):
         a.sales = new['data']
         a.save()
+        return True
+    else: return False
+    
+def updateMarksOrder(new):
+    a = models.MarksOrder.objects.get(name = "marks_order")
+    a.order = new
+    if a.save():
         return True
     else: return False
 

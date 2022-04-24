@@ -1,3 +1,4 @@
+from email.policy import default
 from django.db import models
 from django.core.validators import MaxValueValidator, RegexValidator
 
@@ -25,5 +26,12 @@ class Auctions(models.Model):
 
     def __str__(self):
         return self.number
+    
+class MarksOrder(models.Model):
+    name = models.CharField(max_length=55, null=False, default="marks_order")
+    order = models.JSONField(null=True)
+    
+    def __str__(self):
+        return self.order
     
 # date = models.PositiveIntegerField(validators=[MaxValueValidator(999999999999999999999)])

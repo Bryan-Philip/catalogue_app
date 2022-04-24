@@ -28,7 +28,7 @@ def LotQuery():
 LOT_COUNTER = LotQuery()
 def LotCounter():
     global LOT_COUNTER
-    if(LOT_COUNTER < 23600):
+    if(LOT_COUNTER <= 25999):
         LOT_COUNTER += 1
     else:
         LOT_COUNTER = 23000
@@ -376,7 +376,7 @@ GLOBAL_DATA_POPULATED_DUST = list()
 GLOBAL_DATA_POPULATED_SECONDARY = list()
 
 catalogue = Workbook()
-def PopulateInitialData():
+def PopulateInitialData(marks_order):
     global POPULATED_MAIN
     global POPULATED_SECONDARY
     global POPULATED_DUST
@@ -469,7 +469,9 @@ def PopulateInitialData():
 
     lookup = set()
     UNIQUE_MARKS = [x for x in UNIQUE_MARKS if x not in lookup and lookup.add(x) is None]
-    UNIQUE_MARKS = ['SIOMO', 'EMROK', 'TULON', 'SARMA', 'TEGAT', 'CUPATEA', 'KABIANGA', 'KIPSINENDE', 'SIAN']
+    UNIQUE_MARKS = marks_order
+    print(UNIQUE_MARKS)
+    # UNIQUE_MARKS = ['SIOMO', 'EMROK', 'TULON', 'SARMA', 'TEGAT', 'CUPATEA', 'KABIANGA', 'KIPSINENDE', 'SIAN']
         
     sales = 0
     for sale in populated:
@@ -585,7 +587,7 @@ def AssignLotNumbers(lotnumber):
             if value == 'lot':
                 GLOBAL_DATA_PRIMARY[counter][value] = lotvalue
         counter += 1
-        if lotvalue <= 29999:
+        if lotvalue <= 25999:
             lotvalue += 1
         else: lotvalue = 23000
     counter = 0
@@ -594,7 +596,7 @@ def AssignLotNumbers(lotnumber):
             if value == 'lot':
                 GLOBAL_DATA_SECONDARY[counter][value] = lotvalue
         counter += 1
-        if lotvalue <= 29999:
+        if lotvalue <= 25999:
             lotvalue += 1
         else: lotvalue = 23000
     return lotvalue
@@ -693,8 +695,8 @@ def GenerateLot():
     for sale in pc:
         INVOICE_ORDERS[sale['invoice_number']] = sale['lot']
 
-def CumulativePopulate(lotnum):
-    PopulateInitialData()
+def CumulativePopulate(lotnum, marks_order):
+    PopulateInitialData(marks_order)
     lot = AssignLotNumbers(lotnum)
     CloseLot(LotCounter())
     separator_access = InitGenerator()
@@ -759,7 +761,7 @@ def ArrangeLots(catalogue_data):
         'secondary': VALUATIONS_ROW_LIST_SECONDARY,
     }
 
-class PopulateValuations():
+class PopulateValuations:
     def __init__():
         return
     def fill(valuations):
@@ -830,8 +832,14 @@ class PopulateValuations():
     
     # sheet.column_dimensions["B"].width = 50
     
-class PopulateCatalogue():
+class PopulateCatalogue:
     def fill(target, separator_access):
+        print('--len main--')
+        print(len(GLOBAL_DATA_POPULATED_MAIN))
+        print('--len dust--')
+        print(len(GLOBAL_DATA_POPULATED_DUST))
+        print('--len secondary--')
+        print(len(GLOBAL_DATA_POPULATED_SECONDARY))
         if(target == 'primary'):
             focus = GLOBAL_DATA_POPULATED_MAIN
             target_sheet = catalogue_main_leafy
@@ -936,10 +944,10 @@ class PopulateCatalogue():
                 cell.font = bold
             target_sheet.row_dimensions[acc].height = 42
 
-def GENERATECATALOGUE(input_data, filename):
+def GENERATECATALOGUE(input_data, filename, marks_order):
     global catalogue
     StackGenerator(input_data)
-    metadata = CumulativePopulate(LotQuery())
+    metadata = CumulativePopulate(LotQuery(), marks_order)
     
     valuations = ArrangeLots(metadata['catalogue_data'])
     
@@ -956,6 +964,8 @@ def GENERATECATALOGUE(input_data, filename):
     CloseLot(metadata['lotnumber'])
     
     catalogue.save(filename=dest_save_path)
+    
+    catalogue.close()
     
     return_data = {**metadata, **{'filename': _filename}}
     return return_data

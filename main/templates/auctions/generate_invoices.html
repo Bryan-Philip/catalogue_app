@@ -2,7 +2,7 @@
 
     <div class="mx-auto h-auto max-w-7xl flex align-center justify-center flex-col">
         {% include './update_sale.html' with year=year number=number %}
-        <div class="mx-auto max-w-7xl grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-4 lg:gap-6 bg-gray-300 rounded-lg border-gray-300 p-6">
+        <div class="mx-auto max-w-7xl grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-4 lg:gap-6 bg-white rounded-lg border-gray-300 p-6">
             {% if data.sales %}
             {% for sale in data.sales %}
                 {% csrf_token %}

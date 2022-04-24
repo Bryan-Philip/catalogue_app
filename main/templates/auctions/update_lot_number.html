@@ -26,7 +26,7 @@
 
                 console.log(lot_number)
 
-                if(lot_number > 23599 || lot_number < 23000){
+                if(lot_number > 25999 || lot_number < 23000){
                     allow = false
                 }
                 else {
@@ -49,8 +49,8 @@
                             msg_alert.html(response.message);
                         }
                     })
-                : lot_number > 23599 ? (
-                    msg_alert.html('Lot Number cannot be greater than 23599'),
+                : lot_number > 25999 ? (
+                    msg_alert.html('Lot Number cannot be greater than 25999'),
                     setTimeout(() => {
                         msg_alert.html('')
                     }, 5000)

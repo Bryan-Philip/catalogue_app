@@ -3,7 +3,7 @@ from email.headerregistry import ContentTypeHeader
 from turtle import update
 from django.http import HttpResponse
 from h11 import Data
-from main.models import Auctions
+from main.models import Auctions, MarksOrder
 from django.shortcuts import render
 from django.http import JsonResponse
 from django.views.decorators.csrf import ensure_csrf_cookie
@@ -21,6 +21,7 @@ import os
 import zipfile
 from io import StringIO, BytesIO
 from django.http import HttpResponse
+import random
 
 @ensure_csrf_cookie
 def upload_allocations(request):
@@ -36,8 +37,8 @@ def upload_allocations(request):
             handle_uploaded_allocations(f, fname)
             file_list.append({
                 'name': fname,
-                'data_layer': 0,
-                'left_bound': 0,
+                'data_layer': 4,
+                'left_bound': 3,
                 'id': str(counter) + '_' + str(int(datetime.timestamp(datetime.now()))),
                 'timestamp': int(datetime.timestamp(datetime.now())),
                 'date': DateFormat(date.today()).format("jS M, Y"),
@@ -69,8 +70,8 @@ def upload_sale(request):
         handle_uploaded_sale(file, fname)
         file_data = {
             'name': fname,
-            'data_layer': 0,
-            'left_bound': 0,
+            'data_layer': 4,
+            'left_bound': 1,
             'id': '0_' + str(int(datetime.timestamp(datetime.now()))),
             'timestamp': int(datetime.timestamp(datetime.now())),
             'date': DateFormat(date.today()).format("jS M, Y"),
@@ -217,6 +218,14 @@ class AuctionData:
         }
     def get_single_auction_year(self):
         return self.auction_years()
+
+class MarksData:
+    def order_data():
+        order = MarksOrder.objects.get(name="marks_order")
+        print(type(order))
+        return {
+            'order': order.order,
+        }
 
 def auction_years(request):
     return render(
@@ -381,6 +390,36 @@ def generate_account_sales(request, year, number):
         }
     )
     
+@ensure_csrf_cookie
+def marks_order(request):
+    if request.method == "GET":
+        return render(
+            request,
+            'marks_order.html',
+            {'order': MarksData.order_data()['order']}
+        )
+    if request.method == 'POST':
+        values = request.POST
+        new_order = values['order']
+        updateMarksOrder(new_order)
+        return JsonResponse({'msg': '''
+                                <span id="message-data" style="color: green;" class="text-sm">Order of marks updated</span>
+                                <script>
+                                    $(function(){
+                                        setTimeout(() => {
+                                            $('#message-data').slideUp("swing")
+                                        }, 5000)
+                                    })
+                                </script/>
+                            '''})
+    else:
+        return render(
+            request,
+            'marks_order.html',
+            {'order': MarksData.order_data()['order']}
+        )
+
+    
 ### Generators
 
 def last2(s):
@@ -401,10 +440,18 @@ def generate_catalogue_data(request):
     if request.method == 'POST':
         values = request.POST
         file_data = json.loads(values['data'])
+        init_marks_order = json.loads(MarksData.order_data()['order'])
+        marks_order = list()
+        for mark in init_marks_order:
+            if init_marks_order[mark] == 1:
+                marks_order.append(mark)
+        print(marks_order)
+        r = str(int(random.uniform(100, 800)))
         GENERATE_CATALOGUE(
             file_data,
-            str(int(datetime.timestamp(datetime.now()))),
-            values['auction_id']
+            str(int(datetime.timestamp(datetime.now())))+r,
+            values['auction_id'],
+            marks_order,
         )
         return JsonResponse({'msg': '''
                                 <span id="message-data" style="color: green;">Catalogue Successfully Generated. Reload to sync changes.</span>
@@ -546,8 +593,8 @@ def GENERATE_ACCOUNT_SALES(data, custom, id):
     else:
         return False
 
-def GENERATE_CATALOGUE(data, custom, id):
-    dir = GENERATECATALOGUE(data, custom)
+def GENERATE_CATALOGUE(data, custom, id, marks_order):
+    dir = GENERATECATALOGUE(data, custom, marks_order)
     if dir:
         return_data = [{
             "date": DateFormat(date.today()).format("jS M, Y"),

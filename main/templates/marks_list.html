@@ -1,0 +1,18 @@
+{% block content %}
+{% if order %}
+{% for mark in order %}
+    <div
+        class="relative flex flex-row transition ease transition-300 bg-green-500 hover:bg-green-600 text-white rounded-md cursor-pointer h-8">
+        <span style="line-height: 12px;" class="text-sm uppercase">{{mark}}</span>
+        {% if order|get_item:mark == 1 %}
+            <input class="flex content-center top-1 right-1 absolute justify-center h-6 w-6" type="checkbox"
+                name="order-check" checked/>
+        {% else %}
+            <input class="flex content-center top-1 right-1 absolute justify-center h-6 w-6" type="checkbox"
+                name="order-check"/>
+        {% endif %}
+        <input type="hidden" name="mark-value" value="{{mark}}"/>
+    </div>
+{% endfor %}
+{% endif %}
+{% endblock content %}

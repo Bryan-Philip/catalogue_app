@@ -1,11 +1,11 @@
-{% extends '../base.html' %} {% block content %}
+{% block content %}
 {% load static %}
 
 {% if catalogues %}
-<div class="h-auto border-2 border-gray-400 p-4 rounded-lg">
+<div class="h-auto border-2 border-gray-200 p-4 rounded-lg">
     {% for batch in catalogues %}
     <p>Catalogue generated on: {{batch.date}}</p>
-    <div class="bg-white overflow-hidden inline-block shadow rounded-lg w-40 md:w-40 relative">
+    <div class="bg-white overflow-hidden inline-block shadow-xl rounded-lg w-40 md:w-40 relative">
         <i class="h-16 w-16 rounded-full absolute opacity-50 -top-1 -right-12 fa fa-file text-black text-2xl"></i>
         <div class="px-4 py-5 sm:p-6">
             <dl>

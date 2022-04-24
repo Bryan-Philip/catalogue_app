@@ -22,4 +22,5 @@ urlpatterns = [
     path('auctions/<int:year>/<str:number>/generate_invoices/', views.generate_invoices, name='generate-invoices'),
     path('auctions/<int:year>/<str:number>/generate_account_sales/', views.generate_account_sales, name='generate-account-sales'),
     path('download', views.download_zipped, name='download'),
+    path('marks_order', views.marks_order, name='marks_order'),
 ]
