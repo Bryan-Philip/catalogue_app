@@ -565,7 +565,7 @@ def GenerateInvoice(data, custom_values, counter, buyer):
             else: 
                 buyer_address = DatabaseQueryBuyerAddress(buyer)
             code = buyer
-            address_line1 = buyer_company.upper()
+            address_line1 = str(buyer_company).upper()
             address_line2 = formatAddress(buyer_address)[0]
             address_line3 = formatAddress(buyer_address)[1]
             meta_relation = {
