@@ -440,18 +440,22 @@ def generate_catalogue_data(request):
     if request.method == 'POST':
         values = request.POST
         file_data = json.loads(values['data'])
+        reprint_placement = values['reprint_placement']
         init_marks_order = json.loads(MarksData.order_data()['order'])
         marks_order = list()
         for mark in init_marks_order:
             if init_marks_order[mark] == 1:
                 marks_order.append(mark)
         print(marks_order)
+        print("reprint_placement")
+        print(reprint_placement)
         r = str(int(random.uniform(100, 800)))
         GENERATE_CATALOGUE(
             file_data,
             str(int(datetime.timestamp(datetime.now())))+r,
             values['auction_id'],
             marks_order,
+            reprint_placement,
         )
         return JsonResponse({'msg': '''
                                 <span id="message-data" style="color: green;">Catalogue Successfully Generated. Reload to sync changes.</span>
@@ -593,8 +597,8 @@ def GENERATE_ACCOUNT_SALES(data, custom, id):
     else:
         return False
 
-def GENERATE_CATALOGUE(data, custom, id, marks_order):
-    dir = GENERATECATALOGUE(data, custom, marks_order)
+def GENERATE_CATALOGUE(data, custom, id, marks_order, reprint_placement):
+    dir = GENERATECATALOGUE(data, custom, marks_order, reprint_placement)
     if dir:
         return_data = [{
             "date": DateFormat(date.today()).format("jS M, Y"),

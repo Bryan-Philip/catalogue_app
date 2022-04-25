@@ -28,7 +28,7 @@ def LotQuery():
 LOT_COUNTER = LotQuery()
 def LotCounter():
     global LOT_COUNTER
-    if(LOT_COUNTER <= 25999):
+    if(LOT_COUNTER < 25999):
         LOT_COUNTER += 1
     else:
         LOT_COUNTER = 23000
@@ -99,6 +99,7 @@ DATA_ALIAS = {
     "RA": ["ra"],
     "tare": ["tare", "tare weight", "tareweight(in kg)", "tare weight(in kg)"],
     "kgs": ["kgs", "weight per bag"],
+    "reprint": ["reprint", "reprints"],
     "ignore": ["", None],
 }
 
@@ -123,6 +124,7 @@ DATA_CATALOGUE = {
     "sale_price": "Sale Price",
     "buyers_and_packages": "Buyers and Packages",
     "bags": "No. of Bags",
+    "reprint": "REPRINT",
 }
 
 TEAGRADES_ORDER = [
@@ -265,7 +267,6 @@ class DataInterpretor:
             inner = list()
             endif_check = list()
             bc += 1
-        print(RELATION)
         return {
             'relation': RELATION,
             'data': DATA
@@ -376,7 +377,7 @@ GLOBAL_DATA_POPULATED_DUST = list()
 GLOBAL_DATA_POPULATED_SECONDARY = list()
 
 catalogue = Workbook()
-def PopulateInitialData(marks_order):
+def PopulateInitialData(marks_order, reprint_placement):
     global POPULATED_MAIN
     global POPULATED_SECONDARY
     global POPULATED_DUST
@@ -427,7 +428,9 @@ def PopulateInitialData(marks_order):
 
     for row in range(3, 4):
         # bags include fallback: +1
-        for col in range(1, len(CATALOGUE_KEYS)):
+        # reprint include fallback: +1
+        # Total include fallback: +2
+        for col in range(1, len(CATALOGUE_KEYS)-1):
             catalogue_main_leafy.cell(column=col, row=row, value=DATA_CATALOGUE[CATALOGUE_KEYS[col-1]])
             catalogue_main_dust.cell(column=col, row=row, value=DATA_CATALOGUE[CATALOGUE_KEYS[col-1]])
             catalogue_secondary.cell(column=col, row=row, value=DATA_CATALOGUE[CATALOGUE_KEYS[col-1]])
@@ -550,6 +553,7 @@ def PopulateInitialData(marks_order):
         for mark in DATA_POPULATED_GROUPED[type]:
             DATA_POPULATED_GROUPED[type][mark] = RelationshipSort(DATA_POPULATED_GROUPED[type][mark], TEAGRADES_ORDER, 'grade')
 
+    # Global Grade Order - ignore reprints
     for type in DATA_POPULATED_GROUPED:
         counter = 0
         for mark in DATA_POPULATED_GROUPED[type]:
@@ -558,13 +562,46 @@ def PopulateInitialData(marks_order):
                     for value in sale:
                         if(value == 'grade'):
                             if sale[value] == grade:
-                                DATA_POPULATED_GRADED[type][mark][grade].append(sale)
+                                if sale['reprint'] == None or sale['reprint'] == 'None':
+                                    DATA_POPULATED_GRADED[type][mark][grade].append(sale)
                     counter += 1
-
+                    
+    _GLOBAL_DATA = [*POPULATED_MAIN, *POPULATED_SECONDARY]
+    _REPRINTS = list()
+    for lot in _GLOBAL_DATA:
+        for value in lot:
+            if value == 'reprint':
+                if lot[value] != None:
+                    _REPRINTS.append(lot)
+    
     for type in DATA_POPULATED_GRADED:
         for mark in DATA_POPULATED_GRADED[type]:
             for grade in DATA_POPULATED_GRADED[type][mark]:
                 DATA_POPULATED_GRADED[type][mark][grade].sort(key=lambda item: item.get("invoice_number"))
+                
+    # Secondary Grade Order - reprints placement
+    for type in DATA_POPULATED_GROUPED:
+        counter = 0
+        for mark in DATA_POPULATED_GROUPED[type]:
+            for grade in DATA_POPULATED_GRADED[type][mark]:
+                reprint_list = list()
+                for sale in DATA_POPULATED_GROUPED[type][mark]:
+                    for value in sale:
+                        if(value == 'grade'):
+                            if sale[value] == grade:
+                                if sale['reprint'] != None and sale['reprint'] != 'None':
+                                    reprint_list.append(sale)
+                                    if reprint_placement == 'first':
+                                        DATA_POPULATED_GRADED[type][mark][grade].insert(0, sale)
+                                    elif reprint_placement == 'last':
+                                        DATA_POPULATED_GRADED[type][mark][grade].append(sale)
+                    counter += 1
+                print(reprint_list)
+                # if len(reprint_list) > 0:
+                #     if reprint_placement == 'first':
+                #         DATA_POPULATED_GRADED[type][mark][grade]= [*reprint_list, *DATA_POPULATED_GRADED[type][mark][grade]]
+                #     elif reprint_placement == 'last':
+                #         DATA_POPULATED_GRADED[type][mark][grade]= [*DATA_POPULATED_GRADED[type][mark][grade], *reprint_list]
 
     for type in DATA_POPULATED_GRADED:
         for mark in DATA_POPULATED_GRADED[type]:
@@ -587,7 +624,7 @@ def AssignLotNumbers(lotnumber):
             if value == 'lot':
                 GLOBAL_DATA_PRIMARY[counter][value] = lotvalue
         counter += 1
-        if lotvalue <= 25999:
+        if lotvalue < 25999:
             lotvalue += 1
         else: lotvalue = 23000
     counter = 0
@@ -596,7 +633,7 @@ def AssignLotNumbers(lotnumber):
             if value == 'lot':
                 GLOBAL_DATA_SECONDARY[counter][value] = lotvalue
         counter += 1
-        if lotvalue <= 25999:
+        if lotvalue < 25999:
             lotvalue += 1
         else: lotvalue = 23000
     return lotvalue
@@ -625,6 +662,7 @@ def RowSeparator(company, mark, ra):
         'buyers_and_packages': None,
         'comments': None,
         'bags': None,
+        'reprint': None,
     }
     
 def SeparatorPopulator(data):
@@ -695,8 +733,8 @@ def GenerateLot():
     for sale in pc:
         INVOICE_ORDERS[sale['invoice_number']] = sale['lot']
 
-def CumulativePopulate(lotnum, marks_order):
-    PopulateInitialData(marks_order)
+def CumulativePopulate(lotnum, marks_order, reprint_placement):
+    PopulateInitialData(marks_order, reprint_placement)
     lot = AssignLotNumbers(lotnum)
     CloseLot(LotCounter())
     separator_access = InitGenerator()
@@ -944,10 +982,10 @@ class PopulateCatalogue:
                 cell.font = bold
             target_sheet.row_dimensions[acc].height = 42
 
-def GENERATECATALOGUE(input_data, filename, marks_order):
+def GENERATECATALOGUE(input_data, filename, marks_order, reprint_placement):
     global catalogue
     StackGenerator(input_data)
-    metadata = CumulativePopulate(LotQuery(), marks_order)
+    metadata = CumulativePopulate(LotQuery(), marks_order, reprint_placement)
     
     valuations = ArrangeLots(metadata['catalogue_data'])
     

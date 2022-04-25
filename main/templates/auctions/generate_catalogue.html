@@ -6,6 +6,13 @@
             {% include './update_lot_number.html' with lot_number=lot_number %}
             {% csrf_token %}
             <div class="flex items-center justify-center flex-col max-w-2xl mx-auto">
+                <div class="grid grid-cols-5 p-3 mt-3 rounded-lg bg-blue-500 text-white w-3xl">
+                    <p class="col-span-3 text-right flex content-center justify-center flex-col">Reprints Placement:</p>
+                    <select class="col-span-2 py-1 px-4 mx-4 rounded-md text-black outline-none focus:outline-gray-300 focus:shadow-2xl" id="reprint_placement">
+                        <option value="last">Last</option>
+                        <option value="first">First</option>
+                    </select>
+                </div>
                 <p id="generate-alert-message" class="mt-2 mb-4"></p>
                 <button
                     id="generate-catalogue-ctx"
@@ -60,9 +67,11 @@
                 var form_data = new FormData();
                 msg_alert = $('#generate-alert-message')
                 csrf_token = $('input[name="csrfmiddlewaretoken"]').val();
+                reprint_placement = $('#reprint_placement').val()
 
                 form_data.append("csrfmiddlewaretoken", csrf_token);
                 form_data.append("auction_id", auction_id);
+                form_data.append("reprint_placement", reprint_placement);
                 form_data.append("id", id);
                 form_data.append("data", JSON.stringify(generate_data));
     
