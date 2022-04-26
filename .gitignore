@@ -1,3 +1,5 @@
 /__pycache__
-catalogue/__pycache__/settings.cpython-310.pyc
-main/catalogue/__pycache__/connector.cpython-310.pyc
+main/inclusiontags/__pycache__/__init__.cpython-39.pyc
+main/inclusiontags/__pycache__/display_marks.cpython-39.pyc
+main/templatetags/__pycache__/get_item.cpython-39.pyc
+main/templatetags/__pycache__/__init__.cpython-39.pyc
