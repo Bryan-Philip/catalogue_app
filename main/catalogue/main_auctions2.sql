@@ -56,7 +56,7 @@ INSERT INTO `main_auctions` (`Pid`, `number`, `date`, `allocations`, `catalogue`
 (54, '02', '2023-01-09', NULL, NULL, NULL, '2022-12-15', '2023-01-23', '2023'),
 (55, '03', '2023-01-16', NULL, NULL, NULL, '2022-12-22', '2023-01-30', '2023'),
 (56, '04', '2023-01-23', NULL, NULL, NULL, '2023-01-05', '2023-02-06', '2023'),
-(57, '05', '2023-01-30', NULL, NULL, NULL, '2023-01-12', '2023-02-13', '2023'),
+(57, '05', '2023-01-30', NULL, NULL, NULL, '2023-01-12', '2023-02-13', '2023');
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
