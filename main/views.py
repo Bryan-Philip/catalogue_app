@@ -16,6 +16,7 @@ from django.views.generic import DetailView
 from main.catalogue.invoice import INVOICEGENERATOR
 from main.catalogue.interpret import GENERATECATALOGUE
 from main.catalogue.account_sale import ACCOUNTSALEGENERATOR
+from main.catalogue.warehouse_confirmation import WAREHOUSECONFIRMATIONGENERATOR
 import zipfile
 import os
 import zipfile
@@ -203,6 +204,10 @@ class AuctionData:
                     'account_sales': auction.account_sales,
                     'account_sale_data': auction.account_sale_data,
                     'account_sale_number': auction.account_sale_number,
+                    'warehouse_confirmations': auction.warehouse_confirmations,
+                    'warehouse_confirmation_data': auction.warehouse_confirmation_data,
+                    'warehouse_confirmation_number': auction.warehouse_confirmation_number,
+                    'outlots': auction.outlots,
                 }
                 if auction.year == year:
                     years_relation[year].append(inner)
@@ -290,6 +295,7 @@ def generate_catalogue(request, year, number):
             'number': number,
             'data': auction_data,
             'lot_number': lot,
+            'id_': AuctionData.auction_years()['years_data'][str(year)]['data'][0]['id']
         }
     )
 def generate_invoices(request, year, number):
@@ -337,6 +343,7 @@ def generate_invoices(request, year, number):
             'catalogue_data': auction_data['catalogue_data'],
             'invoice_data': auction_data['invoice_data'],
             'invoice_number': auction_data['invoice_number'],
+            'id_': AuctionData.auction_years()['years_data'][str(year)]['data'][0]['id']
         }
     )
 def generate_account_sales(request, year, number):
@@ -387,6 +394,62 @@ def generate_account_sales(request, year, number):
             'catalogue_data': auction_data['catalogue_data'],
             'account_sale_data': auction_data['account_sale_data'],
             'account_sale_number': auction_data['account_sale_number'],
+            'id_': AuctionData.auction_years()['years_data'][str(year)]['data'][0]['id']
+        }
+    )
+    
+def generate_warehouse_confirmations(request, year, number):
+    for auction in AuctionData.auction_years()['years_data'][str(year)]['data']:
+        if auction['number'] == str(number):
+            auction_data = auction
+            for val in auction_data:
+                if(val == 'allocations'):
+                    if(auction_data[val] != None):
+                        auction_data['allocations'] = json.loads(auction_data[val])
+                if(val == 'catalogue'):
+                    if(auction_data[val] != None):
+                        auction_data['catalogue'] = json.loads(auction_data[val])
+                if(val == 'invoices'):
+                    if(auction_data[val] != None):
+                        auction_data['invoices'] = json.loads(auction_data[val])
+                if(val == 'sales'):
+                    if(auction_data[val] != None):
+                        auction_data['sales'] = json.loads(auction_data[val])
+                if(val == 'account_sales'):
+                    if(auction_data[val] != None):
+                        auction_data['account_sales'] = json.loads(auction_data[val])
+                if(val == 'warehouse_confirmations'):
+                    if(auction_data[val] != None):
+                        auction_data['warehouse_confirmations'] = json.loads(auction_data[val])
+            break
+        else: auction_data = None
+    if(auction_data != None):
+        currentdate = date.today()
+        sale_date = currentdate.strftime("%d/%m/%y")
+        sale_date_format = DateFormat(currentdate).format("jS M, Y")
+        prompt_date = DateFormat(auction_data['prompt_date']).format("j/m/Y")
+        prompt_date_format = DateFormat(auction_data['prompt_date']).format("jS M, Y")
+    else:
+        sale_date = None
+        sale_date_format = None
+        prompt_date = None
+        prompt_date_format = None
+    return render(
+        request,
+        'auctions/generate_warehouse_confirmations.html',
+        {
+            'auction': AuctionData.auction_years()['years_data'][str(year)],
+            'year': year,
+            'number': number,
+            'data': auction_data,
+            'sale_date': sale_date,
+            'sale_date_format': sale_date_format,
+            'prompt_date': prompt_date,
+            'prompt_date_format': prompt_date_format,
+            'catalogue_data': auction_data['catalogue_data'],
+            'warehouse_confirmation_data': auction_data['warehouse_confirmation_data'],
+            'warehouse_confirmation_number': auction_data['warehouse_confirmation_number'],
+            'id_': AuctionData.auction_years()['years_data'][str(year)]['data'][0]['id']
         }
     )
     
@@ -458,7 +521,7 @@ def generate_catalogue_data(request):
             reprint_placement,
         )
         return JsonResponse({'msg': '''
-                                <span id="message-data" style="color: green;">Catalogue Successfully Generated. Reload to sync changes.</span>
+                                <span id="message-data" style="color: green;" class="mb-2 block text-center">Catalogue Successfully Generated. <strong>Auto-reloading</strong> to sync changes.</span>
                                 <script>
                                     $(function(){
                                         setTimeout(() => {
@@ -489,7 +552,7 @@ def generate_invoices_data(request):
             'auction_Pid': values['auction_Pid'],
         }, values['auction_Pid'])
         return JsonResponse({'msg': '''
-                                <span id="message-data" style="color: green;">Invoices Successfully Generated. Reload to sync changes</span>
+                                <span id="message-data" style="color: green;" class="mb-2 block text-center">Invoices Successfully Generated. <strong>Auto-reloading</strong> to sync changes</span>
                                 <script>
                                     $(function(){
                                         setTimeout(() => {
@@ -522,7 +585,7 @@ def generate_account_sales_data(request):
             'auction_Pid': values['auction_Pid'],
         }, values['auction_Pid'])
         return JsonResponse({'msg': '''
-                                <span id="message-data" style="color: green;">Account Sale Successfully Generated. Reload to sync changes</span>
+                                <span id="message-data" style="color: green;" class="mb-2 block text-center">Account Sales Successfully Generated. <strong>Auto-reloading</strong> to sync changes</span>
                                 <script>
                                     $(function(){
                                         setTimeout(() => {
@@ -533,16 +596,136 @@ def generate_account_sales_data(request):
                             '''})
     else:
         return render(request, 'auctions/generate_account_sales.html', )
+    
+@ensure_csrf_cookie
+def generate_warehouse_confirmations_data(request):
+    if request.method == "GET":
+        return render(request, 'auctions/generate_warehouse_confirmations.html', )
+    if request.method == 'POST':
+        values = request.POST
+        file_data = json.loads(values['data'])
+        print(file_data)
+        print(values['auction_id'] + '-' + last2(values['auction_year']))
+        GENERATE_WAREHOUSE_CONFIRMATIONS(file_data, {
+            'sale_date': values['sale_date'],
+            'prompt_date': values['prompt_date'],
+            'auction_number': values['auction_id'] + '-' + last2(values['auction_year']),
+            'auction_number_alt': str(values['auction_year']) + '/' + values['auction_id'],
+            'auction_number_0': str(values['auction_year']) + '/' + str(0) + values['auction_id'],
+            'catalogue_data': values['catalogue_data'],
+            'warehouse_confirmation_data': values['warehouse_confirmation_data'],
+            'warehouse_confirmation_number': values['warehouse_confirmation_number'],
+            'auction_Pid': values['auction_Pid'],
+        }, values['auction_Pid'])
+        return JsonResponse({'msg': '''
+                                <span id="message-data" style="color: green;" class="mb-2 block text-center">Warehouse Confirmations Successfully Generated. <strong>Auto-reloading</strong> to sync changes</span>
+                                <script>
+                                    $(function(){
+                                        setTimeout(() => {
+                                            $('#message-data').slideUp("swing")
+                                        }, 5000)
+                                    })
+                                </script/>
+                            '''})
+    else:
+        return render(request, 'auctions/generate_warehouse_confirmations.html', )
+    
+@ensure_csrf_cookie
+def delete_catalogue_data(request):
+    if request.method == "GET":
+        return render(request, 'auctions/generate_catalogue.html', )
+    if request.method == 'POST':
+        values = request.POST
+        deleteCatalogueData(values['auction_id'])
+        return JsonResponse({'msg': '''
+                                <span id="message-data2" style="color: green;" class="text-center">Catalogues Deleted. <strong>Auto-reloading</strong> to sync changes.</span>
+                                <script>
+                                    $(function(){
+                                        setTimeout(() => {
+                                            $('#message-data2').slideUp("swing")
+                                        }, 5000)
+                                    })
+                                </script/>
+                            '''})
+    else:
+        return render(request, 'auctions/generate_catalogue.html', )
 
 @ensure_csrf_cookie
-def download_zipped(request):
+def delete_invoices_data(request):
+    if request.method == "GET":
+        return render(request, 'auctions/generate_invoices.html', )
+    if request.method == 'POST':
+        values = request.POST
+        deleteInvoiceData(values['auction_id'])
+        return JsonResponse({'msg': '''
+                                <span id="message-data2" style="color: green;" class="text-center">Invoices Deleted. <strong>Auto-reloading</strong> to sync changes</span>
+                                <script>
+                                    $(function(){
+                                        setTimeout(() => {
+                                            $('#message-data2').slideUp("swing")
+                                        }, 5000)
+                                    })
+                                </script/>
+                            '''})
+    else:
+        return render(request, 'auctions/generate_invoices.html', )
+    
+@ensure_csrf_cookie
+def delete_account_sales_data(request):
+    if request.method == "GET":
+        return render(request, 'auctions/generate_account_sales.html', )
+    if request.method == 'POST':
+        values = request.POST
+        deleteAccountSaleData(values['auction_id'])
+        return JsonResponse({'msg': '''
+                                <span id="message-data2" style="color: green;" class="text-center">Account Sales Deleted. <strong>Auto-reloading</strong> to sync changes</span>
+                                <script>
+                                    $(function(){
+                                        setTimeout(() => {
+                                            $('#message-data2').slideUp("swing")
+                                        }, 5000)
+                                    })
+                                </script/>
+                            '''})
+    else:
+        return render(request, 'auctions/generate_account_sales.html', )
+    
+@ensure_csrf_cookie
+def delete_warehouse_confirmations_data(request):
+    if request.method == "GET":
+        return render(request, 'auctions/generate_warehouse_confirmations.html', )
+    if request.method == 'POST':
+        values = request.POST
+        deleteWarehouseConfirmationData(values['auction_id'])
+        return JsonResponse({'msg': '''
+                                <span id="message-data2" style="color: green;" class="text-center">Warehouse Confirmations Deleted. <strong>Auto-reloading</strong> to sync changes</span>
+                                <script>
+                                    $(function(){
+                                        setTimeout(() => {
+                                            $('#message-data2').slideUp("swing")
+                                        }, 5000)
+                                    })
+                                </script/>
+                            '''})
+    else:
+        return render(request, 'auctions/generate_warehouse_confirmations.html', )
+
+@ensure_csrf_cookie
+def download_zipped(request, type):
     if request.method == "POST":
-        folder='media/documents/invoices/'
-        
+        if type == 'invoices':
+            folder='media/documents/invoices/'
+        elif type == 'account_sales':
+            folder='media/documents/account_sales/'
+        elif type == 'warehouse_confirmations':
+            folder='media/documents/warehouse_confirmations/'
+        else:
+            folder='media/documents/invoices/'
+
         values = request.POST
         files = json.loads(values['files'])
         filename = values['filename']
-                        
+
         zip_subdir = filename
         zip_filename = "%s.zip" % zip_subdir
 
@@ -567,6 +750,7 @@ def GENERATE_INVOICES(data, custom, id):
     retdata = INVOICEGENERATOR(data, custom)
     dirs = retdata['dirs']
     dirs_alt = retdata['dirs_alt']
+    outlot = retdata['outlot']
     if len(dirs) >= 1 and len(dirs) >= 1:
         return_data = [{
             "date": DateFormat(date.today()).format("jS M, Y"),
@@ -575,6 +759,8 @@ def GENERATE_INVOICES(data, custom, id):
         }]
         try:
             updateInvoices(id, return_data)
+            updateOutlots(outlot)
+            updateAuctionOutlots(id, outlot)
             return True
         except:
             return False
@@ -590,7 +776,7 @@ def GENERATE_ACCOUNT_SALES(data, custom, id):
             "files": dirs
         }]
         try:
-            # updateAccountSales(id, return_data)
+            updateAccountSales(id, return_data)
             return True
         except:
             return False
@@ -615,6 +801,21 @@ def GENERATE_CATALOGUE(data, custom, id, marks_order, reprint_placement):
     else:
         return False
 
+def GENERATE_WAREHOUSE_CONFIRMATIONS(data, custom, id):    
+    retdata = WAREHOUSECONFIRMATIONGENERATOR(data, custom)
+    dirs = retdata['dirs']
+    if len(dirs) >= 1 and len(dirs) >= 1:
+        return_data = [{
+            "date": DateFormat(date.today()).format("jS M, Y"),
+            "files": dirs
+        }]
+        try:
+            # updateWarehouseConfirmations(id, return_data)
+            return True
+        except:
+            return False
+    else:
+        return False
 
 # Display File
 

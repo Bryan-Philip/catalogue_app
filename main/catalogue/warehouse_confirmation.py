@@ -42,9 +42,9 @@ DATA_ALIAS = {
     "empty2": None,
 }
 
-DATA_ACCOUNT_SALE = {
+DATA_WAREHOUSE_CONFIRMATION = {
     "buyer_code": 'K5',
-    "account_sale_number": 'K11',
+    "warehouse_confirmation_number": 'K11',
     "sale_date": 'E11',
     "sale_date_alt": 'N7',
     "prompt_date": 'H11',
@@ -63,19 +63,19 @@ DATA_ACCOUNT_SALE = {
     "empty2": 'K15',
 }
 
-DATA_ACCOUNT_SALE_META = {
+DATA_WAREHOUSE_CONFIRMATION_META = {
     "sale_date_alt": 'N7',
     "receiver_address_line1": 'A5',
     "receiver_address_line2": 'A6',
     "receiver_address_line3": 'A7',
     "auction_number": 'A9',
     "auction_number_alt": 'A11',
-    "account_sale_number": 'K11',
+    "warehouse_confirmation_number": 'K11',
     "sale_date": 'E11',
     "prompt_date": 'H11',
 }
 
-DATA_ACCOUNT_SALE_TOTALS = {
+DATA_WAREHOUSE_CONFIRMATION_TOTALS = {
     'pkgs': 'C',
     'net': 'F',
     'amount': 'H',
@@ -84,7 +84,7 @@ DATA_ACCOUNT_SALE_TOTALS = {
     'payable_amount': 'M',
 }
 
-DATA_ACCOUNT_SALE_TAX_SUMMARY = {
+DATA_WAREHOUSE_CONFIRMATION_TAX_SUMMARY = {
     'amount': 'A',
     'brokerage': 'C',
     'gross': 'E',
@@ -129,7 +129,7 @@ DATA_SALE = {
 def AccountSaleNumberQuery():
     try:
         with connect(**CONNECTOR) as connection:
-            current_number = '''SELECT `number` FROM `account_sale_number`'''
+            current_number = '''SELECT `number` FROM `warehouse_confirmation_number`'''
             with connection.cursor() as cursor:
                 cursor.execute(current_number)
                 row = cursor.fetchone()
@@ -138,26 +138,26 @@ def AccountSaleNumberQuery():
     except Error as e:
             print(e)
 
-ACCOUNT_SALE_COUNTER = AccountSaleNumberQuery()
+WAREHOUSE_CONFIRMATION_COUNTER = AccountSaleNumberQuery()
 def InvoiceCounter():
-    global ACCOUNT_SALE_COUNTER
-    if(ACCOUNT_SALE_COUNTER < 2000):
-        ACCOUNT_SALE_COUNTER += 1
-        # if len(str(ACCOUNT_SALE_COUNTER)) == 1:
-        #     ACCOUNT_SALE_COUNTER = '00' + str(ACCOUNT_SALE_COUNTER)
-        # elif len(str(ACCOUNT_SALE_COUNTER)) == 2:
-        #     ACCOUNT_SALE_COUNTER = '0' + str(ACCOUNT_SALE_COUNTER)
+    global WAREHOUSE_CONFIRMATION_COUNTER
+    if(WAREHOUSE_CONFIRMATION_COUNTER < 2000):
+        WAREHOUSE_CONFIRMATION_COUNTER += 1
+        # if len(str(WAREHOUSE_CONFIRMATION_COUNTER)) == 1:
+        #     WAREHOUSE_CONFIRMATION_COUNTER = '00' + str(WAREHOUSE_CONFIRMATION_COUNTER)
+        # elif len(str(WAREHOUSE_CONFIRMATION_COUNTER)) == 2:
+        #     WAREHOUSE_CONFIRMATION_COUNTER = '0' + str(WAREHOUSE_CONFIRMATION_COUNTER)
     else:
-        ACCOUNT_SALE_COUNTER = 1
-        # ACCOUNT_SALE_COUNTER = '00' + str(1)
-    return ACCOUNT_SALE_COUNTER
+        WAREHOUSE_CONFIRMATION_COUNTER = 1
+        # WAREHOUSE_CONFIRMATION_COUNTER = '00' + str(1)
+    return WAREHOUSE_CONFIRMATION_COUNTER
 
-def CloseAccountSaleNumber(account_sale_number, Pid):
+def CloseAccountSaleNumber(warehouse_confirmation_number, Pid):
     try:
         with connect(**CONNECTOR) as connection:
-            update_lot = '''UPDATE `main_auctions` SET `account_sale_number` = %s WHERE `Pid` = %s'''
+            update_lot = '''UPDATE `main_auctions` SET `warehouse_confirmation_number` = %s WHERE `Pid` = %s'''
             with connection.cursor() as cursor:
-                cursor.execute(update_lot, (account_sale_number, Pid,))
+                cursor.execute(update_lot, (warehouse_confirmation_number, Pid,))
                 connection.commit()
 
     except Error as e:
@@ -307,9 +307,9 @@ def StackGenerator(input_data, catalogue_data):
         exist = list()
         inner_val = dict()
         for single in data:
-            if(single in DATA_ACCOUNT_SALE.keys()):
+            if(single in DATA_WAREHOUSE_CONFIRMATION.keys()):
                 exist.append(single)
-        for value in DATA_ACCOUNT_SALE.keys():
+        for value in DATA_WAREHOUSE_CONFIRMATION.keys():
             if(value in exist):
                 inner_val[value] = data[value]
             else:
@@ -361,60 +361,17 @@ def formatAddress(address):
         return data
     if(address !=  None):
         if(re.search(',', address)):
-            # P.O. Box search
-            if(re.search('P.O.Box', address)):
-                address = address.replace('P.O.Box', 'P.O. BOX')
-            elif(re.search('P.O. Box', address)):
-                address = address.replace('P.O. Box', 'P.O. BOX')
-            elif(re.search('P.O. Box', address)):
-                address == address
-            elif(re.search('Box', address)):
-                address = address.replace('Box', 'P.O. BOX')
-            else:
-                address = 'P.O. BOX ' + address
-            # (-) Hyphen search
-            if(re.search(' - ', address)):
-                address == address
-            elif(re.search('- ', address)):
-                address = address.replace('- ', ' - ')
-            elif(re.search(' -', address)):
-                address = address.replace(' -', ' - ')
-            elif(re.search('-', address)):
-                address = address.replace('-', ' - ')
-            # Format
-            address = address.upper()
             return splitAddress(address)
         else:
+            counter = 0
             if(re.search('Mombasa', address)):
-                address = address.replace('Mombasa', ',MOMBASA')
+                address = address.replace('Mombasa', ',Mombasa')
             elif(re.search('Nairobi', address)):
-                address = address.replace('Nairobi', ',NAIROBI')
+                address = address.replace('Nairobi', ',Nairobi')
             elif(re.search('Kericho', address)):
-                address = address.replace('Kericho', ',KERICHO')
+                address = address.replace('Kericho', ',Kericho')
             else:
-                address += ',NAIROBI'
-            # P.O. Box search
-            if(re.search('P.O.Box', address)):
-                address = address.replace('P.O.Box', 'P.O. BOX')
-            elif(re.search('P.O. Box', address)):
-                address = address.replace('P.O. Box', 'P.O. BOX')
-            elif(re.search('P.O. Box', address)):
-                address == address
-            elif(re.search('Box', address)):
-                address = address.replace('Box', 'P.O. BOX')
-            else:
-                address = 'P.O. BOX ' + address
-            # (-) Hyphen search
-            if(re.search(' - ', address)):
-                address == address
-            elif(re.search('- ', address)):
-                address = address.replace('- ', ' - ')
-            elif(re.search(' -', address)):
-                address = address.replace(' -', ' - ')
-            elif(re.search('-', address)):
-                address = address.replace('-', ' - ')
-            # Format
-            address = address.upper()
+                address += ',Nairobi'
             return splitAddress(address)
     else:
         return ['', '']
@@ -484,18 +441,18 @@ def GetInvoiceWarehouse(catalogue_data, invoice_number):
 def GenerateAccountSale(data, custom_values, counter, type="default"):
     folder='media/resources/'
     fs = FileSystemStorage(location=folder)
-    template_default = fs.open('ACCOUNT SALE TEMPLATE.xlsx', 'rb+')
+    template_default = fs.open('WAREHOUSE CONFIRMATION TEMPLATE.xlsx', 'rb+')
     file_data = template_default
     
     ACsale_template = load_workbook(filename = file_data)
     account_sale_values = GenerateAccountSaleNumber(custom_values['auction_number_alt'], custom_values['auction_number_0'])
-    account_sale_number = account_sale_values['number']
-    account_sale_number_alt = account_sale_values['number_alt']
+    warehouse_confirmation_number = account_sale_values['number']
+    warehouse_confirmation_number_alt = account_sale_values['number_alt']
     sale_date = custom_values['sale_date']
     prompt_date = custom_values['prompt_date']
     
     catalogue_data = custom_values['catalogue_data']
-    invoice_data = custom_values['account_sale_data']
+    invoice_data = custom_values['warehouse_confirmation_data']
     folder='media/documents/catalogue_data'
     fsc = FileSystemStorage(location=folder)
     
@@ -506,7 +463,7 @@ def GenerateAccountSale(data, custom_values, counter, type="default"):
 
     invoice_file = GenerateAccountSaleNumber(custom_values['auction_number'], custom_values['auction_number_0'])['file']
 
-    fs_save_folder = 'media/documents/account_sales/'
+    fs_save_folder = 'media/documents/warehouse_confirmations/'
     _filename = 'AccountSale_' + invoice_file + '.xlsx'
     dest_save_path = fs_save_folder + _filename
 
@@ -517,11 +474,11 @@ def GenerateAccountSale(data, custom_values, counter, type="default"):
         warehouse_company = DatabaseQueryWarehouseCompany(warehouse)
         warehouse_address = DatabaseQueryWarehouseAddress(warehouse_search)
         code = warehouse
-        address_line1 = warehouse_company.upper()
+        address_line1 = warehouse_company
         address_line2 = formatAddress(warehouse_address)[0]
         address_line3 = formatAddress(warehouse_address)[1]
         meta_relation = {
-            'account_sale_number': account_sale_number_alt,
+            'warehouse_confirmation_number': warehouse_confirmation_number_alt,
             'sale_date':  sale_date,
             'sale_date_alt': sale_date,
             'prompt_date': prompt_date,
@@ -572,18 +529,18 @@ def GenerateAccountSale(data, custom_values, counter, type="default"):
                 ACsale_template.active[cell].number_format = '#,##0.00'
         lot_end = lot_start-1
         SUMMARY_RELATION = {}
-        for total in DATA_ACCOUNT_SALE_TOTALS:
-            ACsale_template.active[DATA_ACCOUNT_SALE_TOTALS[total]+str(totals)] = '=SUM(' + DATA_ACCOUNT_SALE_TOTALS[total] + str(lot_limit_start) + ':' + DATA_ACCOUNT_SALE_TOTALS[total] + str(lot_end) + ')'
-            SUMMARY_RELATION[total] = '=' + DATA_ACCOUNT_SALE_TOTALS[total]+str(totals)
-        for summary in DATA_ACCOUNT_SALE_TAX_SUMMARY:
+        for total in DATA_WAREHOUSE_CONFIRMATION_TOTALS:
+            ACsale_template.active[DATA_WAREHOUSE_CONFIRMATION_TOTALS[total]+str(totals)] = '=SUM(' + DATA_WAREHOUSE_CONFIRMATION_TOTALS[total] + str(lot_limit_start) + ':' + DATA_WAREHOUSE_CONFIRMATION_TOTALS[total] + str(lot_end) + ')'
+            SUMMARY_RELATION[total] = '=' + DATA_WAREHOUSE_CONFIRMATION_TOTALS[total]+str(totals)
+        for summary in DATA_WAREHOUSE_CONFIRMATION_TAX_SUMMARY:
             if(summary != 'gross'):
-                ACsale_template.active[DATA_ACCOUNT_SALE_TAX_SUMMARY[summary]+str(tax_summary)] = SUMMARY_RELATION[summary]
-                ACsale_template.active[DATA_ACCOUNT_SALE_TAX_SUMMARY[summary]+str(tax_summary)].number_format = '$#,##0.00'
+                ACsale_template.active[DATA_WAREHOUSE_CONFIRMATION_TAX_SUMMARY[summary]+str(tax_summary)] = SUMMARY_RELATION[summary]
+                ACsale_template.active[DATA_WAREHOUSE_CONFIRMATION_TAX_SUMMARY[summary]+str(tax_summary)].number_format = '$#,##0.00'
             else:
-                ACsale_template.active[DATA_ACCOUNT_SALE_TAX_SUMMARY[summary]+str(tax_summary)] = '=SUM(' + DATA_ACCOUNT_SALE_TAX_SUMMARY['amount'] + str(tax_summary) + ':' + DATA_ACCOUNT_SALE_TAX_SUMMARY['brokerage'] + str(tax_summary) + ')'
-                ACsale_template.active[DATA_ACCOUNT_SALE_TAX_SUMMARY[summary]+str(tax_summary)].number_format = '$#,##0.00'
-        for meta in DATA_ACCOUNT_SALE_META:
-            ACsale_template.active[DATA_ACCOUNT_SALE_META[meta]] = meta_relation[meta]
+                ACsale_template.active[DATA_WAREHOUSE_CONFIRMATION_TAX_SUMMARY[summary]+str(tax_summary)] = '=SUM(' + DATA_WAREHOUSE_CONFIRMATION_TAX_SUMMARY['amount'] + str(tax_summary) + ':' + DATA_WAREHOUSE_CONFIRMATION_TAX_SUMMARY['brokerage'] + str(tax_summary) + ')'
+                ACsale_template.active[DATA_WAREHOUSE_CONFIRMATION_TAX_SUMMARY[summary]+str(tax_summary)].number_format = '$#,##0.00'
+        for meta in DATA_WAREHOUSE_CONFIRMATION_META:
+            ACsale_template.active[DATA_WAREHOUSE_CONFIRMATION_META[meta]] = meta_relation[meta]
 
         ACsale_template.active.merge_cells('A' + str(tax_summary) + ':B' + str(tax_summary))
         ACsale_template.active.merge_cells('C' + str(tax_summary) + ':D' + str(tax_summary))
@@ -599,13 +556,12 @@ def GenerateAccountSale(data, custom_values, counter, type="default"):
         ACsale_template.active.title = invoice_file
         
         ACsale_template.save(filename=dest_save_path)
-        print("file name saved")
         
         return _filename
 
-class PopulateAccountSale():
+class PopulateInvoice():
     def fill_lots(custom_values):
-        counter = int(custom_values['account_sale_number'])
+        counter = int(custom_values['warehouse_confirmation_number'])
         dirs = list()
         for warehouse in WAREHOUSES_RELATION:
             dirs.append(
@@ -619,6 +575,6 @@ class PopulateAccountSale():
             'dirs': dirs
         }
 
-def ACCOUNTSALEGENERATOR(input_data, custom_data):
+def WAREHOUSECONFIRMATIONGENERATOR(input_data, custom_data):
     StackGenerator(input_data, custom_data['catalogue_data'])
-    return PopulateAccountSale.fill_lots(custom_data)
+    return PopulateInvoice.fill_lots(custom_data)

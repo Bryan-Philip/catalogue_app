@@ -19,6 +19,14 @@
                     class="py-2 px-4 my-4 w-full max-w-lg bg-blue-600 hover:bg-blue-700 focus:ring-blue-500 focus:ring-offset-blue-200 text-white transition ease-in duration-200 text-center text-base font-semibold shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 rounded-lg">
                     Generate Catalogue
                 </button>
+                <p id="delete-alert-message" class="mt-2 mb-4"></p>
+                <input name="__auction-id" type="hidden" value="{{id_}}"/>
+                <button
+                    id="delete-catalogue-ctx"
+                    class="py-2 px-4 mb-4 w-full max-w-lg bg-red-600 hover:bg-red-700 focus:ring-red-500 focus:ring-offset-red-200 text-white transition ease-in duration-200 text-center text-base font-semibold shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 rounded-lg">
+                    <i class="fa fa-trash-alt mr-2 text-white text-lg"></i>
+                    Delete all generated catalogues
+                </button>
             </div>
             {% include './catalogues.html' with catalogues=data.catalogue %}
         </div>
@@ -34,7 +42,47 @@
                     return true
                 }
             }
+            $('#delete-catalogue-ctx').on('click', function(){
+                var form_data = new FormData();
+                msg_alert = $('#delete-alert-message');
+                auction_id = $(this).siblings('input[name="__auction-id"]').val();
+                csrf_token = $('input[name="csrfmiddlewaretoken"]').val();
+                forms_number = $('input[name="catalogue-file"]').length;
+                form_data.append("csrfmiddlewaretoken", csrf_token);
+                form_data.append("auction_id", auction_id);
+                self = $(this)
+                forms_number >= 1 ? (
+                    self.html('<i class="fa fa-spin fa-spinner"></i> Deleting'),
+                    setTimeout(() => {
+                        $.ajax({
+                            url: '/delete_catalogue_data',
+                            dataType: 'json',
+                            cache: false,
+                            contentType: false,
+                            processData: false,
+                            data: form_data,
+                            type: 'post',
+                            success: function (response) {
+                                self.html('Delete all generated catalogues')
+                                msg_alert.html(response.msg);
+                                setTimeout(() => {
+                                    window.location = window.location;
+                                }, 2000)
+                            },
+                            error: function (response) {
+                                msg_alert.html(response.message);
+                            }
+                        })
+                    }, 2000)
+                ) : (
+                    $(this).html('No catalogues to delete'),
+                    setTimeout(() => {
+                        $(this).html('Delete all generated catalogues')
+                    }, 3000)
+                )
+            });
             $('#generate-catalogue-ctx').on('click', function(){
+                var self = $(this);
                 buttons = $('.button-update-allocation');
                 data_layers = []
                 left_bounds = []
@@ -90,21 +138,28 @@
                 }
     
                 allow ?
-                    $.ajax({
-                        url: '/generate_catalogue',
-                        dataType: 'json',
-                        cache: false,
-                        contentType: false,
-                        processData: false,
-                        data: form_data,
-                        type: 'post',
-                        success: function (response) {
-                            msg_alert.html(response.msg);
-                        },
-                        error: function (response) {
-                            msg_alert.html(response.message);
-                        }
-                    })
+                    (
+                        self.html('<i class="fa fa-spin fa-spinner"></i> Generating'),
+                        $.ajax({
+                            url: '/generate_catalogue',
+                            dataType: 'json',
+                            cache: false,
+                            contentType: false,
+                            processData: false,
+                            data: form_data,
+                            type: 'post',
+                            success: function (response) {
+                                self.html('Generate Catalogue')
+                                msg_alert.html(response.msg);
+                                setTimeout(() => {
+                                    window.location = window.location;
+                                }, 2000)
+                            },
+                            error: function (response) {
+                                msg_alert.html(response.message);
+                            }
+                        })
+                    )
                 : (
                     msg_alert.html('<span class="text-red-500">*Ensure all left bound and title layer fields have a value greater than 0</span>'),
                     setTimeout(() => {

@@ -41,6 +41,14 @@
                         class="generate-account-sales-ctx py-2 px-4 w-full max-w-lg bg-blue-600 hover:bg-blue-700 focus:ring-blue-500 focus:ring-offset-blue-200 text-white transition ease-in duration-200 text-center text-base font-semibold shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 rounded-lg">
                         Generate Account Sales
                     </button>
+                    <p id="delete-alert-message" class="mt-2 mb-4"></p>
+                    <input name="__auction-id" type="hidden" value="{{id_}}"/>
+                    <button
+                        id="delete-account-sales-ctx"
+                        class="py-2 px-4 mb-4 w-full max-w-lg bg-red-600 hover:bg-red-700 focus:ring-red-500 focus:ring-offset-red-200 text-white transition ease-in duration-200 text-center text-base font-semibold shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 rounded-lg">
+                        <i class="fa fa-trash-alt mr-2 text-white text-lg"></i>
+                        Delete all generated account sales
+                    </button>
                 </div>
                 {% include './account_sales.html' with account_sales=data.account_sales %}
             {% endfor %}
@@ -74,6 +82,14 @@
                     <button
                         class="generate-account-sales-ctx py-2 px-4 w-full max-w-lg bg-blue-600 hover:bg-blue-700 focus:ring-blue-500 focus:ring-offset-blue-200 text-white transition ease-in duration-200 text-center text-base font-semibold shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 rounded-lg">
                         Generate Account Sales
+                    </button>
+                    <p id="delete-alert-message" class="mt-2 mb-4"></p>
+                    <input name="__auction-id" type="hidden" value="{{id_}}"/>
+                    <button
+                        id="delete-account-sales-ctx"
+                        class="py-2 px-4 mb-4 w-full max-w-lg bg-red-600 hover:bg-red-700 focus:ring-red-500 focus:ring-offset-red-200 text-white transition ease-in duration-200 text-center text-base font-semibold shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 rounded-lg">
+                        <i class="fa fa-trash-alt mr-2 text-white text-lg"></i>
+                        Delete all generated account sales
                     </button>
                 </div>
             {% endif %}
@@ -125,9 +141,50 @@
                 }
             }
 
+            $('#delete-account-sales-ctx').on('click', function(){
+                var form_data = new FormData();
+                msg_alert = $('#delete-alert-message');
+                auction_id = $(this).siblings('input[name="__auction-id"]').val();
+                csrf_token = $('input[name="csrfmiddlewaretoken"]').val();
+                forms_number = $('input[name="files"]').length;
+                form_data.append("csrfmiddlewaretoken", csrf_token);
+                form_data.append("auction_id", auction_id);
+                self = $(this)
+                forms_number >= 1 ? (
+                    self.html('<i class="fa fa-spin fa-spinner"></i> Deleting'),
+                    setTimeout(() => {
+                        $.ajax({
+                            url: '/delete_account_sales_data',
+                            dataType: 'json',
+                            cache: false,
+                            contentType: false,
+                            processData: false,
+                            data: form_data,
+                            type: 'post',
+                            success: function (response) {
+                                self.html('Delete all generated account sales')
+                                msg_alert.html(response.msg);
+                                setTimeout(() => {
+                                    window.location = window.location;
+                                }, 2000)
+                            },
+                            error: function (response) {
+                                msg_alert.html(response.message);
+                            }
+                        })
+                    }, 2000)
+                ) : (
+                    $(this).html('No account sales to delete'),
+                    setTimeout(() => {
+                        $(this).html('Delete all generated account sales')
+                    }, 3000)
+                )
+            });
+
             gs = $('.generate-account-sales-ctx');
             for(var b = 0; b < gs.length; b++){
                 gs.eq(b).on('click', function(){
+                    var self = $(this);
                     var form_data = new FormData();
                     form_id = $(this).siblings('input[name="sale-id"]').val()
                     msg_alert = $(this).siblings('.generate-alert-message')
@@ -177,6 +234,7 @@
                     }
 
                     if(allow === true){
+                        self.html('<i class="fa fa-spin fa-spinner"></i> Generating');
                         $.ajax({
                             url: '/generate_account_sales',
                             dataType: 'json',
@@ -186,7 +244,11 @@
                             data: form_data,
                             type: 'post',
                             success: function (response) {
+                                self.html('Generate Account Sales')
                                 msg_alert.html(response.msg);
+                                setTimeout(() => {
+                                    window.location = window.location;
+                                }, 2000)
                             },
                             error: function (response) {
                                 msg_alert.html(response.message);
@@ -194,13 +256,13 @@
                         })
                     }
                     else if(allow == "missing"){
-                        msg_alert.html('<span class="text-red-500 text-center">*No Catalogue Data Generated. Upload This Sale&apos;s allocations to generate the catalogue data</span>');
+                        msg_alert.html('<span class="text-red-500 text-center mb-2 block">*No Catalogue Data Generated. Upload This Sale&apos;s allocations to generate the catalogue data</span>');
                         setTimeout(() => {
                             msg_alert.html('')
-                        }, 5000)
+                        }, 7000)
                     }
                     else if(!allow){
-                        msg_alert.html('<span class="text-red-500 relative">*Ensure all left bound and title layer fields have a value greater than 0</span>');
+                        msg_alert.html('<span class="text-red-500 relative mb-2 block">*Ensure all left bound and title layer fields have a value greater than 0</span>');
                         setTimeout(() => {
                             msg_alert.html('')
                         }, 5000)

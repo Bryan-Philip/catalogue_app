@@ -91,7 +91,7 @@
 
                 msg_alert = download_zip.eq(i).siblings('.msg-alert')
 
-                fetch('/download', {
+                fetch('/download/invoices', {
                     method: 'POST',
                     body: form_data
                 })

@@ -23,15 +23,25 @@ class Auctions(models.Model):
     account_sale_data = models.CharField(max_length=255, null=True)
     account_sale_number = models.IntegerField(null=False, default=1)
     warehouse_confirmations = models.JSONField(null=True)
+    warehouse_confirmation_data = models.CharField(max_length=255, null=True)
+    warehouse_confirmation_number = models.IntegerField(null=False, default=1)
+    outlots = models.JSONField(null=True)
 
     def __str__(self):
         return self.number
-    
+
 class MarksOrder(models.Model):
     name = models.CharField(max_length=55, null=False, default="marks_order")
     order = models.JSONField(null=True)
     
     def __str__(self):
         return self.order
+
+class Outlots(models.Model):
+    name = models.CharField(max_length=55, null=False, default="outlots_list")
+    outlots = models.JSONField(null=True)
     
+    def __str__(self):
+        return self.outlots
+
 # date = models.PositiveIntegerField(validators=[MaxValueValidator(999999999999999999999)])

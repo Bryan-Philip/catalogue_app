@@ -1,9 +1,9 @@
 {% block content %}
 
-{% if account_sales %}
+{% if warehouse_confirmations %}
 <div class="h-auto border-2 border-gray-200 p-4 rounded-lg">
-    {% for batch in account_sales %}
-        <p>Account Sales generated on: {{batch.date}}</p>
+    {% for batch in warehouse_confirmations %}
+        <p>Warehouse Confirmations generated on: {{batch.date}}</p>
         {% for file in batch.files %}
             <div class="bg-white overflow-hidden inline-block shadow-xl rounded-lg w-40 md:w-40 relative">
                 <i class="h-16 w-16 rounded-full absolute opacity-50 -top-1 -right-12 fa fa-file text-black text-2xl"></i>
@@ -13,7 +13,7 @@
                             {{file}}
                         </dt>
                         <dd class="text-gray-500 font-semibold">
-                            <a href="/media/documents/account_sales/{{file}}">
+                            <a href="/media/documents/warehouse_confirmations/{{file}}">
                                 <button
                                     class="text-sm button-download-file py-1 px-2 bg-yellow-500 hover:bg-yellow-600 focus:ring-yellow-500 focus:ring-offset-yellow-200 text-white w-full transition ease-in duration-200 text-center text-base font-semibold shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 rounded-lg"
                                 >
@@ -34,7 +34,7 @@
     {% endfor %}
 </div>
 {% else %}
-<h2 class="mx-auto align-center font-bold text-1xl text-gray-600">No Account Sales generated yet</h2>
+<h2 class="mx-auto align-center font-bold text-1xl text-gray-600">No Warehouse Confirmations generated yet</h2>
 {% endif %}
 
 <script>
@@ -46,7 +46,7 @@
                 files = files.replace(new RegExp(',,,' + '$'), '');
                 files = files.split(',,,')
                 date = new Date().toDateString();
-                filename = `Account Sales(${date})`
+                filename = `Warehouse Confirmations(${date})`
                 console.log(filename)
                 form_data = new FormData()
                 form_data.append('files', JSON.stringify(files))
@@ -56,7 +56,7 @@
 
                 msg_alert = download_zip.eq(i).siblings('.msg-alert')
 
-                fetch('/download/account_sales', {
+                fetch('/download/warehouse_confirmations', {
                     method: 'POST',
                     body: form_data
                 })

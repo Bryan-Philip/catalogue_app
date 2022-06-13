@@ -32,6 +32,7 @@ ALLOWED_HOSTS = ['l27.0.0.1', 'localhost']
 # Application definition
 
 INSTALLED_APPS = [
+    'clearcache',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',

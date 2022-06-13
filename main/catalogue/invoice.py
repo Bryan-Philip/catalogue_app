@@ -8,6 +8,7 @@ import json
 from main.catalogue.format import *
 import zlib
 import zipfile
+from main.catalogue.helper import *
 
 # invoice = load_workbook(filename = 'EMPIRE INVOICE.xlsx')
 dest_filename = 'invoiced.xlsx'
@@ -164,8 +165,8 @@ def GenerateInvoiceNumber(auction_number, counter):
     base = 'PRME/'
     base_conform = 'PRME_'
     return {
-        'number': base + str(auction_number) + '/' + str(counter),
-        'file': base_conform + str(auction_number) + '_' + str(counter)
+        'number': base + str(auction_number) + '/' + Helper.number_prefix(counter),
+        'file': base_conform + str(auction_number) + '_' + Helper.number_prefix(counter)
     }
     # return {
     #     'number': base + str(auction_number) + '/' + str(InvoiceCounter()),
@@ -283,6 +284,7 @@ BUYERS_OUTLOT = list()
 def StackGenerator(input_data):
     global STACK_DATA
     global BUYERS
+    global BUYERS_OUTLOT
     counter = 0
     for file in input_data:
         STACK_DATA[counter] = DataInterpretor.generate_data(
@@ -319,8 +321,15 @@ def StackGenerator(input_data):
         for lot in populated:
             if lot['buyer_code'] == buyer and LOT_STATUS_RELATION[lot['lot_number']].lower() == 'sold':
                 BUYERS_RELATION[buyer].append(lot)
-            else:
-                BUYERS_OUTLOT.append(lot)
+                
+    for lot in populated:
+        if LOT_STATUS_RELATION[lot['lot_number']].lower() == 'outlot':
+            number = lot['lot_number']
+            for _lot in STACK_DATA:
+                if(_lot['lot_number']) == number:
+                    print('-- outlot --')
+                    print(_lot)
+                    BUYERS_OUTLOT.append(_lot)
     
 # def arrangeData():
 #     global BUYERS
@@ -376,7 +385,7 @@ def formatAddress(address):
             elif(re.search('Kericho', address)):
                 address = address.replace('Kericho', ',KERICHO')
             else:
-                address += ',Nairobi'
+                address += ',NAIROBI'
             # P.O. Box search
             if(re.search('P.O.Box', address)):
                 address = address.replace('P.O.Box', 'P.O. BOX')
@@ -426,6 +435,9 @@ def populate_number(val, level):
         if(counter == data_length-1):
             return val
         counter += 1
+        
+def replaceResale(v):
+    return v.replace(" ", "").replace("-Resale", "").replace("-resale", "").replace("-RESALE", "").replace("Resale", "").replace("resale", "").replace("RESALE", "")
 
 NUMBER_FORMAT_CELLS = list()
 NUMBER_VOID_CELLS = list()
@@ -440,15 +452,17 @@ def PopulateRow(sheet, level, row_data, catalogue_data):
         mark = row_data['mark']
         warehouse = DatabaseQueryProducerCompany(mark)
         if(data[0] != '_'):
-            # if(data == 'warehouse'):
-            #     sheet[str(str(DATA_SALE_RELATION[data])+str(level))] = warehouse
             if(data == 'warehouse'):
-                # print('row data')
-                # print(row_data)
-                # print(row_data['invoice_number_buyer'])
-                sheet[str(str(DATA_SALE_RELATION[data])+str(level))] = GetInvoiceWarehouse(catalogue_data, row_data['invoice_number_buyer'])
+                sheet[str(str(DATA_SALE_RELATION[data])+str(level))] = GetInvoiceWarehouse(catalogue_data, replaceResale(row_data['invoice_number_buyer']))
+            elif(data == 'invoice_number_buyer'):
+                sheet[str(str(DATA_SALE_RELATION[data])+str(level))] = replaceResale(row_data['invoice_number_buyer'])
             elif(data == 'packages' or data == 'net'):
-                sheet[str(str(DATA_SALE_RELATION[data])+str(level))] = int(row_data[data])
+                if data == 'net':
+                    sheet[str(str(DATA_SALE_RELATION[data])+str(level))] = GetInvoiceNet(catalogue_data, replaceResale(row_data['invoice_number_buyer']))
+                else:
+                    sheet[str(str(DATA_SALE_RELATION[data])+str(level))] = int(row_data[data])
+            elif(data == 'type'):
+                sheet[str(str(DATA_SALE_RELATION[data])+str(level))] = GetInvoiceType(catalogue_data, replaceResale(row_data['invoice_number_buyer']))
             else:
                 sheet[str(str(DATA_SALE_RELATION[data])+str(level))] = row_data[data]
             Format.formatArial11(sheet[str(str(DATA_SALE_RELATION[data])+str(level))])
@@ -477,6 +491,24 @@ def GetInvoiceWarehouse(catalogue_data, invoice_number):
             if(lot == 'invoice_number'):
                 if(data['invoice_number'] == invoice_number):
                     lot_warehouse = data['warehouse']
+    return lot_warehouse
+
+def GetInvoiceNet(catalogue_data, invoice_number):
+    lot_warehouse = None
+    for data in catalogue_data:
+        for lot in data:
+            if(lot == 'invoice_number'):
+                if(data['invoice_number'] == invoice_number):
+                    lot_warehouse = data['net']
+    return lot_warehouse
+
+def GetInvoiceType(catalogue_data, invoice_number):
+    lot_warehouse = None
+    for data in catalogue_data:
+        for lot in data:
+            if(lot == 'invoice_number'):
+                if(data['invoice_number'] == invoice_number):
+                    lot_warehouse = data['type']
     return lot_warehouse
 
 def GetInvoiceCompany(catalogue_data, invoice_number):
@@ -526,12 +558,18 @@ def GenerateInvoice(data, custom_values, counter, buyer):
             file_datac = json.load(fcc_file)
 
         invoice_file = GenerateInvoiceNumber(custom_values['auction_number'], counter)['file']
-        invoice_file_alt = GenerateInvoiceNumber(custom_values['auction_number'], counter+1)['file']
-        
+        if len(LOT_PTBL[buyer]) >= 1:
+            invoice_file_alt = GenerateInvoiceNumber(custom_values['auction_number'], counter+1)['file']
+        else:
+            invoice_file_alt = GenerateInvoiceNumber(custom_values['auction_number'], counter)['file']
+            
         fs_save_folder = 'media/documents/invoices/'
         
         invoice_number = GenerateInvoiceNumber(custom_values['auction_number'], counter)['number']
-        invoice_number_alt = GenerateInvoiceNumber(custom_values['auction_number'], counter+1)['number']
+        if len(LOT_PTBL[buyer]) >= 1:
+            invoice_number_alt = GenerateInvoiceNumber(custom_values['auction_number'], counter+1)['number']
+        else:
+            invoice_number_alt = GenerateInvoiceNumber(custom_values['auction_number'], counter)['number']
         
         if type != 'default':
             invoice_number = invoice_number_alt
@@ -540,8 +578,10 @@ def GenerateInvoice(data, custom_values, counter, buyer):
         prompt_date = custom_values['prompt_date']
         if(type == 'default'):
             file_data = template_default
+            focus_file = invoice_file
         else:
             file_data = template_alt
+            focus_file = invoice_file_alt
         
         empire_template = load_workbook(filename = file_data)
         
@@ -683,7 +723,7 @@ def GenerateInvoice(data, custom_values, counter, buyer):
             empire_template.active[('G' + str(tax_summary-1))].number_format = '$#,##0.00'
             empire_template.active[('I' + str(tax_summary-1))].number_format = '$#,##0.00'
             
-            empire_template.active.title = invoice_file
+            empire_template.active.title = focus_file
             
             empire_template.save(filename=dest_save_path)
             
@@ -695,10 +735,16 @@ def GenerateInvoice(data, custom_values, counter, buyer):
         _dir_alt = _Generate(LOT_KTDA, buyer, custom_values, "alt")
     if len(LOT_PTBL[buyer]) >= 1:
         _dir = _Generate(LOT_PTBL, buyer, custom_values, "default")
-        
+    
+    if len(LOT_PTBL[buyer]) >= 1 and len(LOT_KTDA[buyer]) >= 1:
+        counter = counter+1
+    else:
+        counter == counter
+
     return {
         'file': _dir,
-        'file_alt': _dir_alt
+        'file_alt': _dir_alt,
+        'counter': counter,
     }
 
 class PopulateInvoice():
@@ -715,12 +761,14 @@ class PopulateInvoice():
                 dirs.append(buyer_dirs['file'])
             if buyer_dirs['file_alt']:
                 dirs_alt.append(buyer_dirs['file_alt'])
-                counter += 1
+            counter = buyer_dirs['counter']
             counter += 1
         CloseInvoiceNumber(counter, custom_values['auction_Pid'])
+        print(BUYERS_OUTLOT)
         return {
             'dirs': dirs,
-            'dirs_alt': dirs_alt
+            'dirs_alt': dirs_alt,
+            'outlot': BUYERS_OUTLOT,
         }
         
 def INVOICEGENERATOR(input_data, custom_data):

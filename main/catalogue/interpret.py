@@ -12,6 +12,10 @@ from threading import Timer, Thread
 from queue import Queue
 from datetime import datetime
 from django.utils.dateformat import DateFormat
+from django.core.cache import cache
+import math
+
+cache.clear()
 
 def LotQuery():
     try:
@@ -105,16 +109,19 @@ DATA_ALIAS = {
 
 DATA_CATALOGUE = {
     "comments": "Comments",
-    "warehouse": "Warehouse",
+    "empty1": "",
+    "warehouse": "Ware Hse",
     "entry_number": "Entry No.",
     "value": "Value",
+    "empty2": "",
     "lot": "Lot No.",
     "company": "Company",
     "mark": "Mark",
     "grade": "Grade",
-    "manufacture_date": "Mfg. Date",
+    "manufacture_date": "Manf Date",
     "RA": "RA",
-    "invoice_number": "Invoice No.",
+    "empty3": "",
+    "invoice_number": "Invoice",
     "packages": "Pkgs",
     "type": "Type",
     "net": "Net",
@@ -122,7 +129,7 @@ DATA_CATALOGUE = {
     "kgs": "Kgs",
     "tare": "Tare",
     "sale_price": "Sale Price",
-    "buyers_and_packages": "Buyers and Packages",
+    "buyers_and_packages": "Buyer & Packages",
     "bags": "No. of Bags",
     "reprint": "REPRINT",
 }
@@ -233,9 +240,10 @@ class DataInterpretor:
         
         folder='media/documents/allocations/'
         fs = FileSystemStorage(location=folder)
-        file_data = fs.open(file, 'rb+')
+        file_data = fs.open(file, 'rb')
         
         WORKBOOK = load_workbook(filename = file_data, data_only=True)
+        file_data.close()
         DATA = {}
         RELATION = []
         sheet = WORKBOOK.worksheets[0]
@@ -453,12 +461,12 @@ def PopulateInitialData(marks_order, reprint_placement):
     catalogue_valuations.row_dimensions[1].height = 37
     catalogue_valuations.row_dimensions[2].height = 37
             
-    catalogue_main_leafy.merge_cells('A1:S1')
-    catalogue_main_leafy.merge_cells('A2:S2')
-    catalogue_main_dust.merge_cells('A1:S1')
-    catalogue_main_dust.merge_cells('A2:S2')
-    catalogue_secondary.merge_cells('A1:S1')
-    catalogue_secondary.merge_cells('A2:S2')
+    catalogue_main_leafy.merge_cells('A1:W1')
+    catalogue_main_leafy.merge_cells('A2:W2')
+    catalogue_main_dust.merge_cells('A1:W1')
+    catalogue_main_dust.merge_cells('A2:W2')
+    catalogue_secondary.merge_cells('A1:W1')
+    catalogue_secondary.merge_cells('A2:W2')
     catalogue_valuations.merge_cells('A1:W1')
     catalogue_valuations.merge_cells('A2:W2')
     
@@ -642,15 +650,19 @@ def RowSeparator(company, mark, ra):
     if ra and ra != None and ra != "None":
         ra = '(%s Certified)'%ra
     return {
+        'comments': None,
+        'empty1': None,
         'warehouse': company,
         'entry_number': None,
         'value': None,
+        'empty2': mark,
         'lot': None,
-        'company': mark,
+        'company': None,
         'mark': None,
         'grade': None,
         'manufacture_date': None,
         'RA': None,
+        'empty3': None,
         'invoice_number': None,
         'packages': None,
         'type': ra,
@@ -660,7 +672,6 @@ def RowSeparator(company, mark, ra):
         'tare': None,
         'sale_price': None,
         'buyers_and_packages': None,
-        'comments': None,
         'bags': None,
         'reprint': None,
     }
@@ -746,28 +757,105 @@ def CumulativePopulate(lotnum, marks_order, reprint_placement):
         'account_sale_data': INVOICE_ORDERS,
         'separator_access': separator_access,
     }
+    
+def get_rem(n):
+    low = math.floor(n/8)
+    abs = math.ceil(n/8)
+    rem = n%8
+    return {
+        "rem": rem,
+        "rows": abs,
+        "low": low,
+    }
+
+def row_arrange(l):
+    col1 = list()
+    col2 = list()
+    col3 = list()
+    col4 = list()
+    col5 = list()
+    col6 = list()
+    col7 = list()
+    col8 = list()
+    cols = [col1, col2, col3, col4, col5, col6, col7, col8]
+    data = get_rem(len(l))
+    counter = 0
+    print(data)
+    splice_point = 0
+    for col in cols:
+        if(counter < data["rem"]):
+            cols[counter] = l[splice_point:data["rows"]+splice_point]
+            splice_point += data["rows"]
+        elif(counter >= data["rem"]):
+            cols[counter] = l[splice_point:data["low"]+splice_point]
+            splice_point += data["low"]
+        counter += 1
+    datam = list(zip(cols[0],cols[1],cols[2],cols[3],cols[4],cols[5],cols[6],cols[7]))
+    _data = list()
+    c = 0
+    for col in datam:
+        _data = [*_data, *list(col)]
+        c += 1
+    for col in cols:
+        if len(col) == data["rows"] and data["rows"] != data["low"]:
+            _data.append(col[data["rows"]-1])
+    return _data
 
 def ArrangeLots(catalogue_data):
     VALUATIONS_LIST_MAIN = list()
     VALUATIONS_LIST_SECONDARY = list()
     VALUATIONS_ROW_LIST_MAIN = list()
     VALUATIONS_ROW_LIST_SECONDARY = list()
+    all_lots = list()
+    lots_list_main = list()
+    lots_list_secondary = list()
     for sale in catalogue_data:
         for value in sale:
             if value == 'lot':
-                type = TEAGRADES_DATA[sale['grade']]
-                if type == 'primary':
-                    VALUATIONS_LIST_MAIN.append({
-                        'lot': sale[value],
-                        'sale_price': sale['value'],
-                        'empty': None,
-                    })
-                else:
-                    VALUATIONS_LIST_SECONDARY.append({
-                        'lot': sale[value],
-                        'sale_price': sale['value'],
-                        'empty': None,
-                    })
+                all_lots.append(sale['lot'])
+                
+    print(all_lots)
+    print(sorted(all_lots))
+    lots_list = sorted(all_lots)
+    print(lots_list)
+    def access_lot(lot):
+        for sale in catalogue_data:
+            for value in sale:
+                if value == 'lot':
+                    if sale[value] == lot:
+                        type = TEAGRADES_DATA[sale['grade']]
+                        sale_price = sale['value']
+                        return {
+                            "type": type,
+                            "sale_price": sale_price
+                        }
+                        
+    for lot in lots_list:
+        type = access_lot(lot)["type"]
+        if type == 'primary':
+            lots_list_main.append(lot)
+        else:
+            lots_list_secondary.append(lot)
+            
+    print(lots_list_main)
+    print(lots_list_secondary)
+            
+    lots_list_main = row_arrange(sorted(lots_list_main))
+    lots_list_secondary = row_arrange(sorted(lots_list_secondary))
+    for lot in lots_list_main:
+        sale_price = access_lot(lot)["sale_price"]
+        VALUATIONS_LIST_MAIN.append({
+            'lot': lot,
+            'sale_price': sale_price,
+            'empty': None,
+        })
+    for lot in lots_list_secondary:
+        sale_price = access_lot(lot)["sale_price"]
+        VALUATIONS_LIST_SECONDARY.append({
+            'lot': lot,
+            'sale_price': sale_price,
+            'empty': None,
+        })
     counter = 0
     gcounter = 0
     inner = list()
@@ -913,7 +1001,9 @@ class PopulateCatalogue:
                             column_data,
                             '%Y-%m-%d %H:%M:%S'
                         )
-                        cellv = DateFormat(date).format("jS M, Y")
+                        # Revert custom date formatting
+                        # cellv = DateFormat(date).format("jS M, Y")
+                        cellv = date
                         cell = cellv
                     else:
                         cell = column_data
@@ -971,6 +1061,7 @@ class PopulateCatalogue:
                     else: cell = column_data
                 target_sheet.cell(column=col, row=row, value=cell)
         # Apply post-formatting to rows and cells
+        empty_access = ['B','F','M']
         bold=Font(
             size=18,
             bold=True
@@ -981,6 +1072,11 @@ class PopulateCatalogue:
             for cell in target_sheet[str(acc) + ":" + str(acc)]:
                 cell.font = bold
             target_sheet.row_dimensions[acc].height = 42
+        for column in empty_access:
+            target_sheet.column_dimensions[column].width = 0.75
+        target_sheet.active_cell
+        for n in range(1, 100):
+            target_sheet[('K'+str(n))].number_format = 'dd-mmm'
 
 def GENERATECATALOGUE(input_data, filename, marks_order, reprint_placement):
     global catalogue

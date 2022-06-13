@@ -92,6 +92,17 @@ def updateAccountSales(id, value):
         a.save()
         return True
     else: return False
+    
+def updateWarehouseConfirmations(id, value):
+    print(id)
+    a = models.Auctions.objects.get(Pid = id)
+    current = a.warehouse_confirmations
+    new = updateJson(current, value)
+    if(new['status']):
+        a.warehouse_confirmations = new['data']
+        a.save()
+        return True
+    else: return False
 
 def updateInvoiceData(id, value):
     folder='media/documents/invoice_data/'
@@ -112,7 +123,7 @@ def updateAccountSaleData(id, value):
     a.save()
     with fs.open(filename, 'w') as outfile:
         json.dump(value, outfile, indent=4, default=str)
-        
+
 def updateCatalogueData(id, value):
     folder='media/documents/catalogue_data/'
     fs = FileSystemStorage(location=folder)
@@ -122,7 +133,41 @@ def updateCatalogueData(id, value):
     a.save()
     with fs.open(filename, 'w') as outfile:
         json.dump(value, outfile, indent=4, default=str)
-    
+
+def updateWarehouseConfirmationData(id, value):
+    folder='media/documents/warehouse_confirmation_data/'
+    fs = FileSystemStorage(location=folder)
+    a = models.Auctions.objects.get(Pid = id)
+    filename = 'WarehouseConfirmationData_' + str(int(datetime.timestamp(datetime.now()))) + '.json'
+    a.warehouse_confirmation_data = filename
+    a.save()
+    with fs.open(filename, 'w') as outfile:
+        json.dump(value, outfile, indent=4, default=str)
+
+def deleteInvoiceData(id):
+    a = models.Auctions.objects.get(Pid = id)
+    a.invoices = None
+    a.invoice_data = None
+    a.save()
+
+def deleteAccountSaleData(id):
+    a = models.Auctions.objects.get(Pid = id)
+    a.account_sales = None
+    a.account_sale_data = None
+    a.save()
+
+def deleteCatalogueData(id):
+    a = models.Auctions.objects.get(Pid = id)
+    a.catalogue = None
+    a.catalogue_data = None
+    a.save()
+
+def deleteWarehouseConfirmationData(id):
+    a = models.Auctions.objects.get(Pid = id)
+    a.warehouse_confirmations = None
+    a.warehouse_confirmation_data = None
+    a.save()
+
 def updateSingleAllocation(id, value):
     a = models.Auctions.objects.get(Pid = id)
     current = a.allocations
@@ -142,7 +187,7 @@ def updateSingleSale(id, value):
         a.save()
         return True
     else: return False
-    
+
 def updateMarksOrder(new):
     a = models.MarksOrder.objects.get(name = "marks_order")
     a.order = new
@@ -160,7 +205,7 @@ def getCurrentLot():
                 return row[0]
     except Error as e:
             print(e)
-            
+
 def updateLot(lot_number):
     try:
         with connect(**CONNECTOR) as connection:
@@ -170,3 +215,48 @@ def updateLot(lot_number):
                 connection.commit()
     except Error as e:
             print(e)
+
+def updateOutlotsData(current, value, update=False):
+    status = 'insert'
+    if(current == None):
+        if(value != None or value != ''):
+            if(len(value) >= 1):
+                data = json.dumps(value); status = True
+            else: data = None; status = False
+        else: data = None; status = False
+    else:
+        if(value != None or value != ''):
+            if(len(value) >= 1):
+                current = json.loads(current)
+                if(not update):
+                    ins = current + value
+                else:
+                    ins = current
+                data = json.dumps(ins)
+                status = True
+            else: data = None; status = False
+        else: data = None; status = False
+    return {
+        'data': data,
+        'status': status
+    }
+
+def updateOutlots(outlots):
+    a = models.Outlots.objects.get(name = "outlots_list")
+    current = a.outlots
+    new = updateOutlotsData(current, outlots, True)
+    if(new['status']):
+        a.outlots = new['data']
+        a.save()
+        return True
+    else: return False
+
+def updateAuctionOutlots(id, outlots):
+    a = models.Auctions.objects.get(Pid = id)
+    current = a.outlots
+    new = updateOutlotsData(current, outlots, True)
+    if(new['status']):
+        a.outlots = new['data']
+        a.save()
+        return True
+    else: return False

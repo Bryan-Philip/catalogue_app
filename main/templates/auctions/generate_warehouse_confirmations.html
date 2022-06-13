@@ -7,7 +7,7 @@
             {% for sale in data.sales %}
                 {% csrf_token %}
                 <div class="flex items-center justify-start flex-col max-w-2xl mx-auto bg-white p-6 rounded-lg">
-                    <h2 class="mb-4 text-2xl">Generate Invoices for the Sale on Date: <span class="font-bold">{{sale.date}}</span></h2>
+                    <h2 class="mb-4 text-2xl">Generate Warehouse Confirmations for the Sale on Date: <span class="font-bold">{{sale.date}}</span></h2>
                     <p class="text-blue-500">*Auto-generated fields</p>
                     <div class="datepicker form-sale-date-picker relative form-floating mb-3 xl:w-96" data-mdb-toggle-button="false">
                         <input type="text"
@@ -33,24 +33,24 @@
                     <input type="hidden" name="sale-stamp" value="{{sale.timestamp}}"/>
                     <input type="hidden" name="sale-id" value="{{sale.id}}"/>
                     <input type="hidden" name="catalogue-data" value="{{catalogue_data}}"/>
-                    <input type="hidden" name="invoice-data" value="{{invoice_data}}"/>
-                    <input type="hidden" name="invoice-number" value="{{invoice_number}}"/>
+                    <input type="hidden" name="warehouse-confirmation-data" value="{{warehouse_confirmation_data}}"/>
+                    <input type="hidden" name="warehouse-confirmation-number" value="{{warehouse_confirmation_number}}"/>
                     <input type="hidden" name="auction-id" value="{{number}}"/>
                     <input type="hidden" name="auction-year" value="{{year}}"/>
-                    <button
-                        class="generate-invoices-ctx py-2 px-4 w-full max-w-lg bg-blue-600 hover:bg-blue-700 focus:ring-blue-500 focus:ring-offset-blue-200 text-white transition ease-in duration-200 text-center text-base font-semibold shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 rounded-lg">
-                        Generate Invoices
+                    <button disabled
+                        class="generate-warehouse-confirmations-ctx py-2 px-4 w-full max-w-lg bg-blue-600 hover:bg-blue-700 focus:ring-blue-500 focus:ring-offset-blue-200 text-white transition ease-in duration-200 text-center text-base font-semibold shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 rounded-lg">
+                        Generate Warehouse Confirmations
                     </button>
                     <p id="delete-alert-message" class="mt-2 mb-4"></p>
                     <input name="__auction-id" type="hidden" value="{{id_}}"/>
                     <button
-                        id="delete-invoices-ctx"
+                        id="delete-warehouse-confirmations-ctx"
                         class="py-2 px-4 mb-4 w-full max-w-lg bg-red-600 hover:bg-red-700 focus:ring-red-500 focus:ring-offset-red-200 text-white transition ease-in duration-200 text-center text-base font-semibold shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 rounded-lg">
                         <i class="fa fa-trash-alt mr-2 text-white text-lg"></i>
-                        Delete all generated invoices
+                        Delete all generated warehouse confirmations
                     </button>
                 </div>
-                {% include './invoices.html' with invoices=data.invoices %}
+                {% include './warehouse_confirmations.html' with warehouse_confirmations=data.warehouse_confirmations %}
             {% endfor %}
             {% else %}
                 {% csrf_token %}
@@ -79,17 +79,17 @@
                     <input type="hidden" name="sale-id" value="{{sale.id}}"/>
                     <input type="hidden" name="auction-id" value="{{number}}"/>
                     <input type="hidden" name="auction-year" value="{{year}}"/>
-                    <button
-                        class="generate-invoices-ctx py-2 px-4 w-full max-w-lg bg-blue-600 hover:bg-blue-700 focus:ring-blue-500 focus:ring-offset-blue-200 text-white transition ease-in duration-200 text-center text-base font-semibold shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 rounded-lg">
-                        Generate Invoices
+                    <button disabled
+                        class="generate-warehouse-confirmations-ctx py-2 px-4 w-full max-w-lg bg-blue-600 hover:bg-blue-700 focus:ring-blue-500 focus:ring-offset-blue-200 text-white transition ease-in duration-200 text-center text-base font-semibold shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 rounded-lg">
+                        Generate Warehouse Confirmations
                     </button>
                     <p id="delete-alert-message" class="mt-2 mb-4"></p>
                     <input name="__auction-id" type="hidden" value="{{id_}}"/>
                     <button
-                        id="delete-invoices-ctx"
+                        id="delete-warehouse-confirmations-ctx"
                         class="py-2 px-4 mb-4 w-full max-w-lg bg-red-600 hover:bg-red-700 focus:ring-red-500 focus:ring-offset-red-200 text-white transition ease-in duration-200 text-center text-base font-semibold shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 rounded-lg">
                         <i class="fa fa-trash-alt mr-2 text-white text-lg"></i>
-                        Delete all generated invoices
+                        Delete all generated warehouse confirmations
                     </button>
                 </div>
             {% endif %}
@@ -112,7 +112,7 @@
                 data_layers = []
                 left_bounds = []
                 generate_data = []
-                button.length == 0 ? $('.generate-invoices-ctx').attr('disabled', true) : ''
+                button.length == 0 ? $('.generate-warehouse-confirmations-ctx').attr('disabled', true) : ''
                 pass_data = {}
                 title_field = button.parent('.form-complete').siblings('.form-input').children('.form-title-layer').children('input[name="title-layer"]');
                 left_field = button.parent('.form-complete').siblings('.form-input').children('.form-left-bound').children('input[name="left-bound"]');
@@ -141,7 +141,7 @@
                 }
             }
 
-            $('#delete-invoices-ctx').on('click', function(){
+            $('#delete-warehouse-confirmations-ctx').on('click', function(){
                 var form_data = new FormData();
                 msg_alert = $('#delete-alert-message');
                 auction_id = $(this).siblings('input[name="__auction-id"]').val();
@@ -154,7 +154,7 @@
                     self.html('<i class="fa fa-spin fa-spinner"></i> Deleting'),
                     setTimeout(() => {
                         $.ajax({
-                            url: '/delete_invoices_data',
+                            url: '/delete_warehouse_confirmations_data',
                             dataType: 'json',
                             cache: false,
                             contentType: false,
@@ -162,7 +162,7 @@
                             data: form_data,
                             type: 'post',
                             success: function (response) {
-                                self.html('Delete all generated invoices')
+                                self.html('Delete all generated warehouse confirmations')
                                 msg_alert.html(response.msg);
                                 setTimeout(() => {
                                     window.location = window.location;
@@ -174,14 +174,14 @@
                         })
                     }, 2000)
                 ) : (
-                    $(this).html('No invoices to delete'),
+                    $(this).html('No warehouse confirmations to delete'),
                     setTimeout(() => {
-                        $(this).html('Delete all generated invoices')
+                        $(this).html('Delete all generated warehouse confirmations')
                     }, 3000)
                 )
             });
 
-            gs = $('.generate-invoices-ctx');
+            gs = $('.generate-warehouse-confirmations-ctx');
             for(var b = 0; b < gs.length; b++){
                 gs.eq(b).on('click', function(){
                     var self = $(this);
@@ -197,8 +197,8 @@
                     auction_year = $(this).siblings('input[name="auction-year"]').val()
 
                     catalogue_data = $(this).siblings('input[name="catalogue-data"]').val()
-                    invoice_data = $(this).siblings('input[name="invoice-data"]').val()
-                    invoice_number = $(this).siblings('input[name="invoice-number"]').val()
+                    warehouse_confirmation_data = $(this).siblings('input[name="warehouse-confirmation-data"]').val()
+                    warehouse_confirmation_number = $(this).siblings('input[name="warehouse-confirmation-number"]').val()
 
                     generate_data = getSale(form_id).generate_data
                     left_bounds = getSale(form_id).left_bounds
@@ -212,10 +212,12 @@
                     form_data.append('auction_Pid', auction_Pid);
                     form_data.append('auction_year', auction_year);
                     form_data.append('catalogue_data', catalogue_data);
-                    form_data.append('invoice_data', invoice_data);
-                    form_data.append('invoice_number', invoice_number);
+                    form_data.append('warehouse_confirmation_data', warehouse_confirmation_data);
+                    form_data.append('warehouse_confirmation_number', warehouse_confirmation_number);
                             
                     bounds = [...left_bounds, ...data_layers];
+
+                    console.log(bounds)
 
                     for(var i = 0; i < bounds.length; i++){
                         if(!BoundAllow(bounds[i])){
@@ -234,7 +236,7 @@
                     if(allow === true){
                         self.html('<i class="fa fa-spin fa-spinner"></i> Generating');
                         $.ajax({
-                            url: '/generate_invoices',
+                            url: '/generate_warehouse_confirmations',
                             dataType: 'json',
                             cache: false,
                             contentType: false,
@@ -242,14 +244,13 @@
                             data: form_data,
                             type: 'post',
                             success: function (response) {
-                                self.html('Generate Invoices')
+                                self.html('Generate Warehouse Confirmations')
                                 msg_alert.html(response.msg);
                                 setTimeout(() => {
                                     window.location = window.location;
                                 }, 2000)
                             },
                             error: function (response) {
-                                self.html('Generate Invoices')
                                 msg_alert.html(response.message);
                             }
                         })
