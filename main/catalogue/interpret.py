@@ -481,7 +481,6 @@ def PopulateInitialData(marks_order, reprint_placement):
     lookup = set()
     UNIQUE_MARKS = [x for x in UNIQUE_MARKS if x not in lookup and lookup.add(x) is None]
     UNIQUE_MARKS = marks_order
-    print(UNIQUE_MARKS)
     # UNIQUE_MARKS = ['SIOMO', 'EMROK', 'TULON', 'SARMA', 'TEGAT', 'CUPATEA', 'KABIANGA', 'KIPSINENDE', 'SIAN']
         
     sales = 0
@@ -604,7 +603,6 @@ def PopulateInitialData(marks_order, reprint_placement):
                                     elif reprint_placement == 'last':
                                         DATA_POPULATED_GRADED[type][mark][grade].append(sale)
                     counter += 1
-                print(reprint_list)
                 # if len(reprint_list) > 0:
                 #     if reprint_placement == 'first':
                 #         DATA_POPULATED_GRADED[type][mark][grade]= [*reprint_list, *DATA_POPULATED_GRADED[type][mark][grade]]
@@ -655,8 +653,8 @@ def RowSeparator(company, mark, ra):
         'warehouse': company,
         'entry_number': None,
         'value': None,
-        'empty2': mark,
-        'lot': None,
+        'empty2': None,
+        'lot': mark,
         'company': None,
         'mark': None,
         'grade': None,
@@ -757,7 +755,7 @@ def CumulativePopulate(lotnum, marks_order, reprint_placement):
         'account_sale_data': INVOICE_ORDERS,
         'separator_access': separator_access,
     }
-    
+
 def get_rem(n):
     low = math.floor(n/8)
     abs = math.ceil(n/8)
@@ -780,7 +778,6 @@ def row_arrange(l):
     cols = [col1, col2, col3, col4, col5, col6, col7, col8]
     data = get_rem(len(l))
     counter = 0
-    print(data)
     splice_point = 0
     for col in cols:
         if(counter < data["rem"]):
@@ -814,10 +811,7 @@ def ArrangeLots(catalogue_data):
             if value == 'lot':
                 all_lots.append(sale['lot'])
                 
-    print(all_lots)
-    print(sorted(all_lots))
     lots_list = sorted(all_lots)
-    print(lots_list)
     def access_lot(lot):
         for sale in catalogue_data:
             for value in sale:
@@ -836,9 +830,6 @@ def ArrangeLots(catalogue_data):
             lots_list_main.append(lot)
         else:
             lots_list_secondary.append(lot)
-            
-    print(lots_list_main)
-    print(lots_list_secondary)
             
     lots_list_main = row_arrange(sorted(lots_list_main))
     lots_list_secondary = row_arrange(sorted(lots_list_secondary))
@@ -925,6 +916,8 @@ class PopulateValuations:
             for col in range(1, len(valuations_titlerow)):
                 catalogue_valuations.cell(column=col, row=row, value='SECONDARY')
         catalogue_valuations.merge_cells('A' + str(access_end) + ':W' + str(access_end))
+
+        # FIXME: Add merge for primary and secondary titles
                 
         secondary_row = access_end+1
         secondary_end = len(secondary_valuations)+secondary_row
@@ -959,13 +952,7 @@ class PopulateValuations:
     # sheet.column_dimensions["B"].width = 50
     
 class PopulateCatalogue:
-    def fill(target, separator_access):
-        print('--len main--')
-        print(len(GLOBAL_DATA_POPULATED_MAIN))
-        print('--len dust--')
-        print(len(GLOBAL_DATA_POPULATED_DUST))
-        print('--len secondary--')
-        print(len(GLOBAL_DATA_POPULATED_SECONDARY))
+    def fill(target, separator_access, marks_order):
         if(target == 'primary'):
             focus = GLOBAL_DATA_POPULATED_MAIN
             target_sheet = catalogue_main_leafy
@@ -988,6 +975,8 @@ class PopulateCatalogue:
                     if(column_data != None):
                         if access['invoice_number'] != None:
                             cell = INVOICE_ORDERS[access['invoice_number']]
+                        elif column_data in marks_order:
+                            cell = column_data
                         else: cell = None
                     else: cell = None
                 elif(column == 'warehouse'):
@@ -1085,9 +1074,9 @@ def GENERATECATALOGUE(input_data, filename, marks_order, reprint_placement):
     
     valuations = ArrangeLots(metadata['catalogue_data'])
     
-    PopulateCatalogue.fill('primary', metadata['separator_access']['MAIN_ACCESS'])
-    PopulateCatalogue.fill('dust', metadata['separator_access']['DUST_ACCESS'])
-    PopulateCatalogue.fill('secondary', metadata['separator_access']['SECONDARY_ACCESS'])
+    PopulateCatalogue.fill('primary', metadata['separator_access']['MAIN_ACCESS'], marks_order)
+    PopulateCatalogue.fill('dust', metadata['separator_access']['DUST_ACCESS'], marks_order)
+    PopulateCatalogue.fill('secondary', metadata['separator_access']['SECONDARY_ACCESS'], marks_order)
     
     PopulateValuations.fill(valuations)
     

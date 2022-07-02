@@ -458,7 +458,7 @@ def PopulateRow(sheet, level, row_data, catalogue_data):
                 sheet[str(str(DATA_SALE_RELATION[data])+str(level))] = replaceResale(row_data['invoice_number_buyer'])
             elif(data == 'packages' or data == 'net'):
                 if data == 'net':
-                    sheet[str(str(DATA_SALE_RELATION[data])+str(level))] = GetInvoiceNet(catalogue_data, replaceResale(row_data['invoice_number_buyer']))
+                    sheet[str(str(DATA_SALE_RELATION[data])+str(level))] = int(GetInvoiceNet(catalogue_data, replaceResale(row_data['invoice_number_buyer'])))
                 else:
                     sheet[str(str(DATA_SALE_RELATION[data])+str(level))] = int(row_data[data])
             elif(data == 'type'):
