@@ -437,7 +437,7 @@ def populate_number(val, level):
         counter += 1
         
 def replaceResale(v):
-    return v.replace(" ", "").replace("-Resale", "").replace("-resale", "").replace("-RESALE", "").replace("Resale", "").replace("resale", "").replace("RESALE", "")
+    return str(v).replace(" ", "").replace("-Resale", "").replace("-resale", "").replace("-RESALE", "").replace("Resale", "").replace("resale", "").replace("RESALE", "")
 
 NUMBER_FORMAT_CELLS = list()
 NUMBER_VOID_CELLS = list()
@@ -458,9 +458,15 @@ def PopulateRow(sheet, level, row_data, catalogue_data):
                 sheet[str(str(DATA_SALE_RELATION[data])+str(level))] = replaceResale(row_data['invoice_number_buyer'])
             elif(data == 'packages' or data == 'net'):
                 if data == 'net':
-                    sheet[str(str(DATA_SALE_RELATION[data])+str(level))] = int(GetInvoiceNet(catalogue_data, replaceResale(row_data['invoice_number_buyer'])))
+                    if data != None:
+                        sheet[str(str(DATA_SALE_RELATION[data])+str(level))] = int(GetInvoiceNet(catalogue_data, replaceResale(row_data['invoice_number_buyer'])))
+                    else:
+                        sheet[str(str(DATA_SALE_RELATION[data])+str(level))] = GetInvoiceNet(catalogue_data, replaceResale(row_data['invoice_number_buyer']))
                 else:
-                    sheet[str(str(DATA_SALE_RELATION[data])+str(level))] = int(row_data[data])
+                    if data != None:
+                        sheet[str(str(DATA_SALE_RELATION[data])+str(level))] = int(row_data[data])
+                    else:
+                        sheet[str(str(DATA_SALE_RELATION[data])+str(level))] = row_data[data]
             elif(data == 'type'):
                 sheet[str(str(DATA_SALE_RELATION[data])+str(level))] = GetInvoiceType(catalogue_data, replaceResale(row_data['invoice_number_buyer']))
             else:
