@@ -23,7 +23,7 @@ def print_repository(repo):
         print('Remote named "{}" with URL "{}"'.format(remote, remote.url))
     print('Last commit for repo is {}.'.format(str(repo.head.commit.hexsha)))
 
-repo_path = "/wamp64/www/catalogue/"
+repo_path = "/Users/User/Desktop/catalogue_app"
 repo = Repo(repo_path)
 
 # Get Untracked Files
