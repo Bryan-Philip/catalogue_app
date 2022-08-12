@@ -7,6 +7,7 @@ from main.catalogue.query import *
 from django.core.files.storage import FileSystemStorage
 import json
 from main.catalogue.format import *
+from main.catalogue.helper import *
 
 DATA_LETTERS = ['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z']
 DATA_ALIAS = {
@@ -86,10 +87,10 @@ DATA_ACCOUNT_SALE_TOTALS = {
 
 DATA_ACCOUNT_SALE_TAX_SUMMARY = {
     'amount': 'A',
-    'brokerage': 'C',
-    'gross': 'E',
-    'whtax': 'G',
-    'payable_amount': 'I',
+    'brokerage': 'B',
+    'gross': 'C',
+    'whtax': 'E',
+    'payable_amount': 'F',
 }
 
 DATA_SALE_RELATION = {
@@ -139,17 +140,17 @@ def AccountSaleNumberQuery():
             print(e)
 
 ACCOUNT_SALE_COUNTER = AccountSaleNumberQuery()
-def InvoiceCounter():
+def AcSaleCounter():
     global ACCOUNT_SALE_COUNTER
     if(ACCOUNT_SALE_COUNTER < 2000):
         ACCOUNT_SALE_COUNTER += 1
-        # if len(str(ACCOUNT_SALE_COUNTER)) == 1:
-        #     ACCOUNT_SALE_COUNTER = '00' + str(ACCOUNT_SALE_COUNTER)
-        # elif len(str(ACCOUNT_SALE_COUNTER)) == 2:
-        #     ACCOUNT_SALE_COUNTER = '0' + str(ACCOUNT_SALE_COUNTER)
+        if len(str(ACCOUNT_SALE_COUNTER)) == 1:
+            ACCOUNT_SALE_COUNTER = '00' + str(ACCOUNT_SALE_COUNTER)
+        elif len(str(ACCOUNT_SALE_COUNTER)) == 2:
+            ACCOUNT_SALE_COUNTER = '0' + str(ACCOUNT_SALE_COUNTER)
     else:
         ACCOUNT_SALE_COUNTER = 1
-        # ACCOUNT_SALE_COUNTER = '00' + str(1)
+        ACCOUNT_SALE_COUNTER = '00' + str(1)
     return ACCOUNT_SALE_COUNTER
 
 def CloseAccountSaleNumber(account_sale_number, Pid):
@@ -163,17 +164,17 @@ def CloseAccountSaleNumber(account_sale_number, Pid):
     except Error as e:
         print(e)
 
-def GenerateAccountSaleNumber(auction_number, auction_number_alt):
+def GenerateAccountSaleNumber(auction_number, auction_number_alt, counter):
     base = 'PRME/'
     base_conform = 'PRME_'
     return {
-        'number': base + str(auction_number),
-        'number_alt': base + str(auction_number_alt),
-        'file': base_conform + str(auction_number)
+        'number': base + str(auction_number) + '/' + Helper.number_prefix(counter),
+        'number_alt': base + str(auction_number_alt)  + '/' + Helper.number_prefix(counter),
+        'file': base_conform + str(auction_number) + '_' + Helper.number_prefix(counter)
     }
     # return {
-    #     'number': base + str(auction_number) + '/' + str(InvoiceCounter()),
-    #     'file': base_conform + str(auction_number) + '_' + str(InvoiceCounter())
+    #     'number': base + str(auction_number) + '/' + str(AcSaleCounter()),
+    #     'file': base_conform + str(auction_number) + '_' + str(AcSaleCounter())
     # }
 
 def findAlias(list, value):
@@ -280,18 +281,26 @@ STACK_DATA = {}
 combined = list()
 LOT_STATUS_RELATION = dict()
 populated = list()
-WAREHOUSES = list()
-WAREHOUSES_RELATION = dict()
-WAREHOUSES_OUTLOT = list()  
+PRODUCERS = list()
+PRODUCERS_RELATION = dict()
+PRODUCERS_OUTLOT = list()
+
+def FormatOutlot(lot):
+    retain = ['lot_number', 'invoice_number_buyer', 'sold_packages', 'pkgs', 'packages', 'type', 'grade', 'net', 'price']
+    if lot:
+        lot['price'] = 'UNSOLD'
+        for value in lot:
+            if value not in retain:
+                lot[value] = None
+    return lot
 
 def StackGenerator(input_data, catalogue_data):
     global STACK_DATA
-    global WAREHOUSES
-    global WAREHOUSES_RELATION
-    global WAREHOUSES_OUTLOT
+    global PRODUCERS
+    global PRODUCERS_RELATION
+    global PRODUCERS_OUTLOT
     counter = 0
     for file in input_data:
-        print(file)
         STACK_DATA[counter] = DataInterpretor.generate_data(
             DataInterpretor.init_data(
                 file['left_bound'],
@@ -323,20 +332,31 @@ def StackGenerator(input_data, catalogue_data):
         file_datac = json.load(fcc_file)
         
     for lot in populated:
-        lot['warehouse'] = GetInvoiceWarehouse(file_datac, lot['invoice_number_buyer'])
+        lot['producer'] = GetAcSaleProducerMark(file_datac, lot['invoice_number_buyer'])
         if lot['invoice_number_buyer'] != '':
-            WAREHOUSES.append(re.sub(r'[0-9]', '', GetInvoiceWarehouse(file_datac, lot['invoice_number_buyer'])))
-    WAREHOUSES = list(set(WAREHOUSES))
-    print(WAREHOUSES)
-    for warehouse in WAREHOUSES:
-        WAREHOUSES_RELATION[warehouse] = list()
-    for warehouse in WAREHOUSES:
+            PRODUCERS.append(re.sub(r'[0-9]', '', GetAcSaleProducerMark(file_datac, lot['invoice_number_buyer'])))
+    PRODUCERS = list(set(PRODUCERS))
+    print(PRODUCERS)
+    for producer in PRODUCERS:
+        PRODUCERS_RELATION[producer] = list()
+    for producer in PRODUCERS:
         for lot in populated:
-            if lot['warehouse'] == warehouse and LOT_STATUS_RELATION[lot['lot_number']].lower() == 'sold':
-                WAREHOUSES_RELATION[warehouse].append(lot)
-            else:
-                WAREHOUSES_RELATION[warehouse].append(lot)
-                WAREHOUSES_OUTLOT.append(lot)
+            if lot['producer'] == producer:
+                if LOT_STATUS_RELATION[lot['lot_number']].lower() == 'sold':
+                    PRODUCERS_RELATION[producer].append(lot)
+                else:
+                    PRODUCERS_RELATION[producer].append(FormatOutlot(lot))
+
+    for lot in populated:
+        if LOT_STATUS_RELATION[lot['lot_number']].lower() == 'outlot':
+            number = lot['lot_number']
+            for _lot in STACK_DATA:
+                if(_lot['lot_number']) == number:
+                    # print('-- outlot --')
+                    # print(_lot)
+                    PRODUCERS_OUTLOT.append(_lot)
+
+    print(LOT_STATUS_RELATION)
     
 # def arrangeData():
 #     global BUYERS
@@ -386,13 +406,13 @@ def formatAddress(address):
             return splitAddress(address)
         else:
             if(re.search('Mombasa', address)):
-                address = address.replace('Mombasa', ',MOMBASA')
+                address = address.replace('Mombasa', ', MOMBASA')
             elif(re.search('Nairobi', address)):
-                address = address.replace('Nairobi', ',NAIROBI')
+                address = address.replace('Nairobi', ', NAIROBI')
             elif(re.search('Kericho', address)):
-                address = address.replace('Kericho', ',KERICHO')
+                address = address.replace('Kericho', ', KERICHO')
             else:
-                address += ',NAIROBI'
+                address += ', NAIROBI'
             # P.O. Box search
             if(re.search('P.O.Box', address)):
                 address = address.replace('P.O.Box', 'P.O. BOX')
@@ -458,161 +478,218 @@ def PopulateRow(sheet, level, row_data, catalogue_data):
                 # print('row data')
                 # print(row_data)
                 # print(row_data['invoice_number_buyer'])
-                sheet[str(str(DATA_SALE_RELATION[data])+str(level))] = GetInvoiceWarehouse(catalogue_data, row_data['invoice_number_buyer'])
+                sheet[str(str(DATA_SALE_RELATION[data])+str(level))] = GetAcSaleProducerMark(catalogue_data, row_data['invoice_number_buyer'])
             elif(data == 'packages' or data == 'net'):
-                sheet[str(str(DATA_SALE_RELATION[data])+str(level))] = int(row_data[data])
+                if row_data[data] != None:
+                    sheet[str(str(DATA_SALE_RELATION[data])+str(level))] = int(row_data[data])
             else:
                 sheet[str(str(DATA_SALE_RELATION[data])+str(level))] = row_data[data]
             Format.GeneralCenter(sheet[str(str(DATA_SALE_RELATION[data])+str(level))])
         else:
-            sheet[populate_number(DATA_SALE_RELATION[data], level)] = populate_number(DATA_SALE[data], level)
-            sheet[populate_number(DATA_SALE_RELATION[data], level)].number_format = '$#,##0.00'
-            Format.GeneralCenter(sheet[populate_number(DATA_SALE_RELATION[data], level)])
-            cell = populate_number(DATA_SALE_RELATION[data], level)
-            NUMBER_FORMAT_CELLS.append(cell)
+            # CHECK Outlot Status
+            if LOT_STATUS_RELATION[row_data['lot_number']] == 'Sold':
+                sheet[populate_number(DATA_SALE_RELATION[data], level)] = populate_number(DATA_SALE[data], level)
+                sheet[populate_number(DATA_SALE_RELATION[data], level)].number_format = '$#,##0.00'
+                if data == '_payable_amount':
+                    sheet.merge_cells(DATA_SALE_RELATION[data] + str(level) + ':N' + str(level))
+                Format.GeneralCenter(sheet[populate_number(DATA_SALE_RELATION[data], level)])
+                cell = populate_number(DATA_SALE_RELATION[data], level)
+                NUMBER_FORMAT_CELLS.append(cell)
+            else:
+                targets = ['A','B','C','D','E','F','G']
+                for target in targets:
+                    Format.formatUnsoldAcSale(sheet[target+str(level)])
+
     return NUMBER_FORMAT_CELLS
 
-def GetInvoiceWarehouse(catalogue_data, invoice_number):
-    lot_warehouse = None
+def GetAcSaleProducerMark(catalogue_data, invoice_number):
+    lot_producer = None
     for data in catalogue_data:
         for lot in data:
             if(lot == 'invoice_number'):
                 if(data['invoice_number'] == invoice_number):
-                    lot_warehouse = data['warehouse']
-    return lot_warehouse
+                    lot_producer = data['mark']
+    return lot_producer
 
-def GenerateAccountSale(data, custom_values, counter, type="default"):
+def GenerateAccountSale(data, custom_values, counter, producer):
     folder='media/resources/'
     fs = FileSystemStorage(location=folder)
-    template_default = fs.open('ACCOUNT SALE TEMPLATE.xlsx', 'rb+')
-    file_data = template_default
-    
-    ACsale_template = load_workbook(filename = file_data)
-    account_sale_values = GenerateAccountSaleNumber(custom_values['auction_number_alt'], custom_values['auction_number_0'])
-    account_sale_number = account_sale_values['number']
-    account_sale_number_alt = account_sale_values['number_alt']
-    sale_date = custom_values['sale_date']
-    prompt_date = custom_values['prompt_date']
     
     catalogue_data = custom_values['catalogue_data']
-    invoice_data = custom_values['account_sale_data']
+
     folder='media/documents/catalogue_data'
     fsc = FileSystemStorage(location=folder)
     
     with fsc.open(catalogue_data, 'rb+') as fcc_file:
         file_datac = json.load(fcc_file)
 
-    # print(file_datac)
+    LOT_COMBINED = {producer: list()}
+    
+    for producer in data:
+        lot = data[producer]
+        for lot_data in lot:
+            LOT_COMBINED[producer].append(lot_data)
 
-    invoice_file = GenerateAccountSaleNumber(custom_values['auction_number'], custom_values['auction_number_0'])['file']
+    def _Generate(data, producer, custom_values, type="default"):
+        folder='media/resources/'
+        fs = FileSystemStorage(location=folder)
+        template_default = fs.open('ACCOUNT SALE TEMPLATE.xlsx', 'rb+')
 
-    fs_save_folder = 'media/documents/account_sales/'
-    _filename = 'AccountSale_' + invoice_file + '.xlsx'
-    dest_save_path = fs_save_folder + _filename
+        catalogue_data = custom_values['catalogue_data']
 
-    for warehouse in data:
-        warehouse_search = warehouse
-        if re.search('CTC', warehouse):
-            warehouse_search = 'CTC'
-        warehouse_company = DatabaseQueryWarehouseCompany(warehouse)
-        warehouse_address = DatabaseQueryWarehouseAddress(warehouse_search)
-        code = warehouse
-        address_line1 = warehouse_company.upper()
-        address_line2 = formatAddress(warehouse_address)[0]
-        address_line3 = formatAddress(warehouse_address)[1]
-        meta_relation = {
-            'account_sale_number': account_sale_number_alt,
-            'sale_date':  sale_date,
-            'sale_date_alt': sale_date,
-            'prompt_date': prompt_date,
-            'receiver_address_line1': address_line1,
-            'receiver_address_line2': address_line2,
-            'receiver_address_line3': address_line3,
-            'auction_number': custom_values['auction_number'],
-            'auction_number_alt': custom_values['auction_number_alt']
-        }
-        lot_main = list()
-        lot_secondary = list()
-        lot_start = 15
-        lot_secondary_start = 17
-        lot_limit_start = lot_start
-        totals = 19
-        tax_summary = 23
-        lot = data[warehouse]
-        
-        for sale in lot:
-            for value in sale:
-                if value == 'grade':
-                    if TEAGRADES_DATA[sale[value]] == 'primary':
-                        lot_main.append(sale)
-                    else:
-                        lot_secondary.append(sale)
-        
-        main_length = len(lot_main)
-        secondary_length = len(lot_secondary)
-        data_length = len(lot)+2
-        lot_secondary_ac_start = main_length+lot_secondary_start
-        totals += data_length
-        tax_summary += data_length
-        if(data_length > 1):
-            ACsale_template.active.insert_rows(37, data_length-1)
-            ACsale_template.active.insert_rows(lot_start, main_length-1)
-            ACsale_template.active.insert_rows(lot_secondary_ac_start, secondary_length-1)
-        NUMBER_CELLS = list()
-        for lot_data in lot_main:
-            NUMBER_CELLS = [*NUMBER_CELLS, *PopulateRow(ACsale_template.active, lot_start, lot_data, file_datac)]
-            lot_start += 1
-        for lot_data in lot_secondary:
-            NUMBER_CELLS = [*NUMBER_CELLS, *PopulateRow(ACsale_template.active, lot_secondary_ac_start, lot_data, file_datac)]
-            lot_secondary_ac_start += 1
-        for cell in NUMBER_CELLS:
-            if re.search('J', cell):
-                ACsale_template.active[cell].number_format = '0.00_);(0.00)'
-            else:
-                ACsale_template.active[cell].number_format = '#,##0.00'
-        lot_end = lot_start-1
-        SUMMARY_RELATION = {}
-        for total in DATA_ACCOUNT_SALE_TOTALS:
-            ACsale_template.active[DATA_ACCOUNT_SALE_TOTALS[total]+str(totals)] = '=SUM(' + DATA_ACCOUNT_SALE_TOTALS[total] + str(lot_limit_start) + ':' + DATA_ACCOUNT_SALE_TOTALS[total] + str(lot_end) + ')'
-            SUMMARY_RELATION[total] = '=' + DATA_ACCOUNT_SALE_TOTALS[total]+str(totals)
-        for summary in DATA_ACCOUNT_SALE_TAX_SUMMARY:
-            if(summary != 'gross'):
-                ACsale_template.active[DATA_ACCOUNT_SALE_TAX_SUMMARY[summary]+str(tax_summary)] = SUMMARY_RELATION[summary]
-                ACsale_template.active[DATA_ACCOUNT_SALE_TAX_SUMMARY[summary]+str(tax_summary)].number_format = '$#,##0.00'
-            else:
-                ACsale_template.active[DATA_ACCOUNT_SALE_TAX_SUMMARY[summary]+str(tax_summary)] = '=SUM(' + DATA_ACCOUNT_SALE_TAX_SUMMARY['amount'] + str(tax_summary) + ':' + DATA_ACCOUNT_SALE_TAX_SUMMARY['brokerage'] + str(tax_summary) + ')'
-                ACsale_template.active[DATA_ACCOUNT_SALE_TAX_SUMMARY[summary]+str(tax_summary)].number_format = '$#,##0.00'
-        for meta in DATA_ACCOUNT_SALE_META:
-            ACsale_template.active[DATA_ACCOUNT_SALE_META[meta]] = meta_relation[meta]
+        file_data = template_default
+        ACsale_template = load_workbook(filename = file_data)
 
-        ACsale_template.active.merge_cells('A' + str(tax_summary) + ':B' + str(tax_summary))
-        ACsale_template.active.merge_cells('C' + str(tax_summary) + ':D' + str(tax_summary))
-        ACsale_template.active.merge_cells('E' + str(tax_summary) + ':F' + str(tax_summary))
-        ACsale_template.active.merge_cells('G' + str(tax_summary) + ':H' + str(tax_summary))
-        ACsale_template.active.merge_cells('I' + str(tax_summary) + ':J' + str(tax_summary))
-        ACsale_template.active.merge_cells('A' + str(tax_summary-1) + ':B' + str(tax_summary-1))
-        ACsale_template.active.merge_cells('C' + str(tax_summary-1) + ':D' + str(tax_summary-1))
-        ACsale_template.active.merge_cells('E' + str(tax_summary-1) + ':F' + str(tax_summary-1))
-        ACsale_template.active.merge_cells('G' + str(tax_summary-1) + ':H' + str(tax_summary-1))
-        ACsale_template.active.merge_cells('I' + str(tax_summary-1) + ':J' + str(tax_summary-1))
-        
-        ACsale_template.active.title = invoice_file
-        
-        ACsale_template.save(filename=dest_save_path)
-        print("file name saved")
-        
-        return _filename
+        ac_sale_file = GenerateAccountSaleNumber(custom_values['auction_number'], custom_values['auction_number_alt'], counter)['file']
+
+        account_sale_values = GenerateAccountSaleNumber(custom_values['auction_number'], custom_values['auction_number_alt'], counter)
+        ac_sale_data = custom_values['account_sale_data']
+        account_sale_number_alt = account_sale_values['number_alt']
+
+        sale_date = custom_values['sale_date']
+        prompt_date = custom_values['prompt_date']
+
+        fs_save_folder = 'media/documents/account_sales/'
+        _filename = 'AccountSale_' + ac_sale_file + '.xlsx'
+        dest_save_path = fs_save_folder + _filename
+
+        for producer in data:
+            producer_search = producer
+            producer_company = DatabaseQueryProducerCompany(producer)
+            producer_address = DatabaseQueryProducerAddress(producer_search)
+            code = producer
+            address_line1 = producer_company.upper()
+            address_line2 = formatAddress(producer_address)[0]
+            address_line3 = formatAddress(producer_address)[1]
+            meta_relation = {
+                'account_sale_number': account_sale_number_alt,
+                'sale_date':  sale_date,
+                'sale_date_alt': sale_date,
+                'prompt_date': prompt_date,
+                'receiver_address_line1': address_line1,
+                'receiver_address_line2': address_line2,
+                'receiver_address_line3': address_line3,
+                'auction_number': custom_values['auction_number'],
+                'auction_number_alt': custom_values['auction_number_alt']
+            }
+            lot_main = list()
+            lot_secondary = list()
+            lot_start = 15
+            lot_initial = lot_start
+            lot_secondary_title = 16
+            lot_secondary_start = 17
+            totals = 19
+            tax_summary = 23
+            lot = data[producer]
+
+            for sale in lot:
+                for value in sale:
+                    if value == 'grade':
+                        if TEAGRADES_DATA[sale[value]] == 'primary':
+                            lot_main.append(sale)
+                        else:
+                            lot_secondary.append(sale)
+            
+            main_length = len(lot_main)
+            secondary_length = len(lot_secondary)
+            data_length = (main_length)+(secondary_length)
+            lot_secondary_ac_start = lot_secondary_start+(main_length-1)
+            lot_secondary_title = lot_secondary_title+(main_length-1)
+            lot_end = lot_secondary_ac_start
+            if main_length != 0:
+                totals += (main_length-1)
+                tax_summary += (main_length-1)
+            if secondary_length != 0:
+                totals += (secondary_length-1)
+                tax_summary += (secondary_length-1)
+                lot_end += (secondary_length-1)
+            balance_proceeds = tax_summary+1
+            total_charges = tax_summary
+
+            # DEBUG VALUES
+            # print("PROMPT DATE => " + str(prompt_date))
+            # print("LOT SECONDARY START => " + str(lot_secondary_ac_start))
+            # print("LOT SECONDARY TITLE => " + str(lot_secondary_title))
+            # print("TOTALS => " + str(totals))
+            # print("SUMMARY => " + str(tax_summary))
+            # print("MAIN LENGTH => " + str(main_length))
+            # print("SECONDARY LENGTH => " + str(secondary_length))
+            # print("DATA LENGTH => " + str(data_length))
+
+            if(data_length > 1):
+                if main_length > 1:
+                    ACsale_template.active.insert_rows(lot_start, main_length-1)
+                if secondary_length > 1:
+                    ACsale_template.active.insert_rows(lot_secondary_ac_start, secondary_length-1)
+            NUMBER_CELLS = list()
+            for lot_data in lot_main:
+                NUMBER_CELLS = [*NUMBER_CELLS, *PopulateRow(ACsale_template.active, lot_start, lot_data, file_datac)]
+                lot_start += 1
+            for lot_data in lot_secondary:
+                NUMBER_CELLS = [*NUMBER_CELLS, *PopulateRow(ACsale_template.active, lot_secondary_ac_start, lot_data, file_datac)]
+                lot_secondary_ac_start += 1
+            for cell in NUMBER_CELLS:
+                if re.search('J', cell):
+                    ACsale_template.active[cell].number_format = '0.00_);(0.00)'
+                else:
+                    ACsale_template.active[cell].number_format = '#,##0.00'
+            SUMMARY_RELATION = {}
+
+            for total in DATA_ACCOUNT_SALE_TOTALS:
+                ACsale_template.active[DATA_ACCOUNT_SALE_TOTALS[total]+str(totals)] = '=SUM(' + DATA_ACCOUNT_SALE_TOTALS[total] + str(lot_initial) + ':' + DATA_ACCOUNT_SALE_TOTALS[total] + str(lot_end) + ')'
+                SUMMARY_RELATION[total] = '=' + DATA_ACCOUNT_SALE_TOTALS[total]+str(totals)
+
+            for summary in DATA_ACCOUNT_SALE_TAX_SUMMARY:
+                if(summary != 'gross' and summary != 'payable_amount'):
+                    ACsale_template.active[DATA_ACCOUNT_SALE_TAX_SUMMARY[summary]+str(tax_summary)] = SUMMARY_RELATION[summary]
+                    if(summary == 'amount' or summary == 'whtax'):
+                        ACsale_template.active[DATA_ACCOUNT_SALE_TAX_SUMMARY[summary]+str(tax_summary)].number_format = '#,##0.00'
+                elif(summary == 'gross'):
+                    ACsale_template.active[DATA_ACCOUNT_SALE_TAX_SUMMARY[summary]+str(tax_summary)] = '=SUM(' + DATA_ACCOUNT_SALE_TAX_SUMMARY['amount'] + str(tax_summary) + ':' + DATA_ACCOUNT_SALE_TAX_SUMMARY['brokerage'] + str(tax_summary) + ')'
+                    ACsale_template.active[DATA_ACCOUNT_SALE_TAX_SUMMARY[summary]+str(tax_summary)].number_format = '0.00_);(0.00)'
+                elif(summary == 'payable_amount'):
+                    ACsale_template.active[DATA_ACCOUNT_SALE_TAX_SUMMARY[summary]+str(tax_summary)] = '=SUM(' + DATA_ACCOUNT_SALE_TAX_SUMMARY['gross'] + str(tax_summary) + ':' + DATA_ACCOUNT_SALE_TAX_SUMMARY['whtax'] + str(tax_summary) + ')'
+                    ACsale_template.active[DATA_ACCOUNT_SALE_TAX_SUMMARY[summary]+str(tax_summary)].number_format = '#,##0.00'
+            for meta in DATA_ACCOUNT_SALE_META:
+                ACsale_template.active[DATA_ACCOUNT_SALE_META[meta]] = meta_relation[meta]
+
+            # BALANCE PROCEEDS PLACEMENT
+            ACsale_template.active['M'+str(balance_proceeds)] = '=ABS(M' + str(total_charges) + '-' + 'M' + str(totals) + ')'
+            ACsale_template.active['M'+str(balance_proceeds)].number_format = '#,##0.00'
+
+            ##### POST-FORMATTING
+            ACsale_template.active.merge_cells('C' + str(tax_summary) + ':D' + str(tax_summary))
+            ACsale_template.active.merge_cells('M' + str(tax_summary) + ':N' + str(tax_summary))
+            ACsale_template.active.merge_cells('M' + str(balance_proceeds) + ':N' + str(balance_proceeds))
+            ACsale_template.active.merge_cells('M' + str(totals) + ':N' + str(totals))
+            
+            ACsale_template.active.title = ac_sale_file
+            
+            ACsale_template.save(filename=dest_save_path)
+            
+            return _filename
+
+    _dir = None
+    if len(LOT_COMBINED[producer]) >= 1:
+        _dir = _Generate(LOT_COMBINED, producer, custom_values, "default")
+    
+    return {
+        'file': _dir,
+        'counter': counter,
+    }
 
 class PopulateAccountSale():
     def fill_lots(custom_values):
         counter = int(custom_values['account_sale_number'])
         dirs = list()
-        for warehouse in WAREHOUSES_RELATION:
-            dirs.append(
-                GenerateAccountSale({
-                    warehouse: WAREHOUSES_RELATION[warehouse]
-                }, custom_values, counter, 'default')
-            )
+        for producer in PRODUCERS_RELATION:
+            producer_dirs = GenerateAccountSale({
+                producer: PRODUCERS_RELATION[producer]
+            }, custom_values, counter, producer)
+            print(producer_dirs)
+            if producer_dirs['file']:
+                dirs.append(producer_dirs['file'])
+            counter = producer_dirs['counter']
             counter += 1
         CloseAccountSaleNumber(counter, custom_values['auction_Pid'])
         return {

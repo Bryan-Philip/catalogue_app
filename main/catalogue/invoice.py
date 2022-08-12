@@ -529,10 +529,10 @@ def GenerateInvoice(data, custom_values, counter, buyer):
     
     with fsc.open(catalogue_data, 'rb+') as fcc_file:
         file_datac = json.load(fcc_file)
-    
+
     LOT_PTBL = {buyer: list()}
     LOT_KTDA = {buyer: list()}
-            
+
     for buyer in data:
         lot = data[buyer]
         for lot_data in lot:

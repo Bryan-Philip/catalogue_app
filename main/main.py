@@ -144,16 +144,46 @@ def updateWarehouseConfirmationData(id, value):
     with fs.open(filename, 'w') as outfile:
         json.dump(value, outfile, indent=4, default=str)
 
-def deleteInvoiceData(id):
+def deleteInvoiceData(id, sale_id):
     a = models.Auctions.objects.get(Pid = id)
-    a.invoices = None
-    a.invoice_data = None
+    curr = json.loads(a.invoices)
+    if(len(curr) > 0):
+        result = [i for i in curr if 'sale_id' in i and not (i['sale_id'] == sale_id)]
+        a.invoices = json.dumps(result)
     a.save()
 
-def deleteAccountSaleData(id):
+def deleteAllInvoiceData(id, type):
     a = models.Auctions.objects.get(Pid = id)
-    a.account_sales = None
-    a.account_sale_data = None
+    if type == 'cleanup':
+        curr = json.loads(a.invoices)
+        for i in range(0, len(curr)-1):
+            if 'sale_id' not in curr[i]:
+                del curr[i]
+        a.invoices = json.dumps(curr)
+    elif type == 'all':
+        a.invoices = None
+        a.invoice_data = None
+    a.save()
+
+def deleteAccountSaleData(id, sale_id):
+    a = models.Auctions.objects.get(Pid = id)
+    curr = json.loads(a.account_sales)
+    if(len(curr) > 0):
+        result = [i for i in curr if 'sale_id' in i and not (i['sale_id'] == sale_id)]
+        a.account_sales = json.dumps(result)
+    a.save()
+
+def deleteAllAccountSaleData(id, type):
+    a = models.Auctions.objects.get(Pid = id)
+    if type == 'cleanup':
+        curr = json.loads(a.account_sales)
+        for i in range(0, len(curr)-1):
+            if 'sale_id' not in curr[i]:
+                del curr[i]
+        a.account_sales = json.dumps(curr)
+    elif type == 'all':
+        a.account_sales = None
+        a.account_sale_data = None
     a.save()
 
 def deleteCatalogueData(id):

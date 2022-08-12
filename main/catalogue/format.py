@@ -61,6 +61,17 @@ FORMAT_INITIAL = NamedStyle(
     number_format="center"
 )
 
+FORMAT_UNSOLD_SALE__AC = NamedStyle(
+    name="unsold_sale__ac",
+    font= Font(
+        color='FF0000'
+    ),
+    alignment = Alignment(
+        horizontal='center',
+        vertical='center'
+    ),
+)
+
 FORMAT_CENTER = NamedStyle(
     name="centerhv",
     alignment = Alignment(
@@ -144,6 +155,8 @@ class Format:
         cell.style = FORMAT_ARIAL_11
     def formatArial11Bold(cell: cell):
         cell.style = FORMAT_ARIAL_11_BOLD
+    def formatUnsoldAcSale(cell: cell):
+        cell.style = FORMAT_UNSOLD_SALE__AC
 
 medium_border = Border(
     top=Side(border_style=BORDER_MEDIUM, color='00000000'),

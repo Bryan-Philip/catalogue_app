@@ -1,0 +1,9 @@
+{% block content %}
+    {% if update %}
+        {% if update == True %}
+            <div class="inline-flex absolute -top-2 -right-2 justify-center items-center w-6 h-6 text-xs font-bold text-white bg-red-500 rounded-full border-2 border-white dark:border-gray-900">1</div>
+        {% else %}
+            <span></span>
+        {% endif %}
+    {% endif %}
+{% endblock content %}

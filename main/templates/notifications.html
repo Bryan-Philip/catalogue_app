@@ -1,0 +1,11 @@
+{% block content %}
+{% load git_status %}
+
+<div>
+    <div id="sortlist" class="w-40">
+        {% csrf_token %}
+        {% git_status %}
+    </div>
+</div>
+
+{% endblock content %}

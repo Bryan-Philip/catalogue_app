@@ -2,75 +2,91 @@
 
 {% if invoices %}
 <div class="h-auto border-2 border-gray-200 p-4 rounded-lg">
-    {% for batch in invoices %}
-        <p>Invoices generated on: {{batch.date}}</p>
-        {% for file in batch.files %}
-            <div class="bg-white overflow-hidden inline-block shadow-xl rounded-lg w-40 md:w-40 relative">
-                <i class="h-16 w-16 rounded-full absolute opacity-50 -top-1 -right-12 fa fa-file text-black text-2xl"></i>
-                <div class="px-4 py-5 sm:p-6">
-                    <dl>
-                        <dt class="text-xs leading-5 font-medium text-gray-500 truncate mb-2">
-                            {{file}}
-                        </dt>
-                        <dd class="text-gray-500 font-semibold">
-                            <a href="/media/documents/invoices/{{file}}">
-                                <button
-                                    class="text-sm button-download-file py-1 px-2 bg-green-500 hover:bg-green-700 focus:ring-green-500 focus:ring-offset-green-200 text-white w-full transition ease-in duration-200 text-center text-base font-semibold shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 rounded-lg"
-                                >
-                                    Download File
-                                </button>
-                            </a>
-                        </dd>
-                    </dl>
-                </div>
-            </div>
-        {% endfor %}
-        {% csrf_token %}
-        <p class="msg-alert my-2"></p>
-        <input type="hidden" name="files" value='{% for file in batch.files %}{{file}},,,{% endfor %}'/>
-        <button class="mb-6 text-sm button-download-zip py-1 px-2 bg-green-500 hover:bg-green-700 focus:ring-green-500 focus:ring-offset-green-200 text-white w-full transition ease-in duration-200 text-center text-base font-semibold shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 rounded-lg">
-            (Account: PTBL) Download Zip
-        </button>
-        {% if batch.files_alt|length > 0 %}
-        {% for file in batch.files_alt %}
-            <div class="bg-white overflow-hidden inline-block shadow-xl rounded-lg w-40 md:w-40 relative">
-                <i class="h-16 w-16 rounded-full absolute opacity-50 -top-1 -right-12 fa fa-file text-black text-2xl"></i>
-                <div class="px-4 py-5 sm:p-6">
-                    <dl>
-                        <dt class="text-xs leading-5 font-medium text-gray-500 truncate mb-2">
-                            {{file}}
-                        </dt>
-                        <dd class="text-gray-500 font-semibold">
-                            <a href="/media/documents/invoices/{{file}}">
-                                <button
-                                    class="text-sm button-download-file py-1 px-2 bg-green-500 hover:bg-green-700 focus:ring-green-500 focus:ring-offset-green-200 text-white w-full transition ease-in duration-200 text-center text-base font-semibold shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 rounded-lg"
-                                >
-                                    Download File
-                                </button>
-                            </a>
-                        </dd>
-                    </dl>
-                </div>
-            </div>
-        {% endfor %}
+    {% if sales_list|length > 0 %}
+        {% if sale_id not in sales_list %}
+            <h2 class="mx-auto align-center font-bold text-1xl text-gray-600">No invoices generated yet for this sale</h2>
         {% endif %}
-        {% csrf_token %}
-        <p class="msg-alert my-2"></p>
-        <input type="hidden" name="files" value='{% for file in batch.files_alt %}{{file}},,,{% endfor %}'/>
-        <button class="text-sm button-download-zip py-1 px-2 bg-green-500 hover:bg-green-700 focus:ring-green-500 focus:ring-offset-green-200 text-white w-full transition ease-in duration-200 text-center text-base font-semibold shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 rounded-lg">
-            (Account: KTDA) Download Zip
-        </button>
-    {% endfor %}
+        {% for batch in invoices %}
+            {% if batch.sale_id %}
+                {% if sale_id == batch.sale_id %}
+                    <p>Invoices generated on: {{batch.date}}</p>
+                    {% if sale_id|in_list:sales_list %}
+                        {% for file in batch.files %}
+                            <div class="bg-white overflow-hidden inline-block shadow-xl rounded-lg w-40 md:w-40 relative">
+                                <i class="h-16 w-16 rounded-full absolute opacity-50 -top-1 -right-12 fa fa-file text-black text-2xl"></i>
+                                <div class="px-4 py-5 sm:p-6">
+                                    <dl>
+                                        <dt class="text-xs leading-5 font-medium text-gray-500 truncate mb-2">
+                                            {{file}}
+                                        </dt>
+                                        <dd class="text-gray-500 font-semibold">
+                                            <a href="/media/documents/invoices/{{file}}">
+                                                <button
+                                                    class="text-sm button-download-file py-1 px-2 bg-green-500 hover:bg-green-700 focus:ring-green-500 focus:ring-offset-green-200 text-white w-full transition ease-in duration-200 text-center text-base font-semibold shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 rounded-lg"
+                                                >
+                                                    Download File
+                                                </button>
+                                            </a>
+                                        </dd>
+                                    </dl>
+                                </div>
+                            </div>
+                        {% endfor %}
+                        {% csrf_token %}
+                        <p class="msg-alert my-2"></p>
+                        <input type="hidden" name="files" value='{% for file in batch.files %}{{file}},,,{% endfor %}'/>
+                        <button class="mb-6 text-sm button-download-zip py-1 px-2 bg-green-500 hover:bg-green-700 focus:ring-green-500 focus:ring-offset-green-200 text-white w-full transition ease-in duration-200 text-center text-base font-semibold shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 rounded-lg">
+                            (Account: PTBL) Download Zip
+                        </button>
+                        {% if batch.files_alt|length > 0 %}
+                            {% for file in batch.files_alt %}
+                                <div class="bg-white overflow-hidden inline-block shadow-xl rounded-lg w-40 md:w-40 relative">
+                                    <i class="h-16 w-16 rounded-full absolute opacity-50 -top-1 -right-12 fa fa-file text-black text-2xl"></i>
+                                    <div class="px-4 py-5 sm:p-6">
+                                        <dl>
+                                            <dt class="text-xs leading-5 font-medium text-gray-500 truncate mb-2">
+                                                {{file}}
+                                            </dt>
+                                            <dd class="text-gray-500 font-semibold">
+                                                <a href="/media/documents/invoices/{{file}}">
+                                                    <button
+                                                        class="text-sm button-download-file py-1 px-2 bg-green-500 hover:bg-green-700 focus:ring-green-500 focus:ring-offset-green-200 text-white w-full transition ease-in duration-200 text-center text-base font-semibold shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 rounded-lg"
+                                                    >
+                                                        Download File
+                                                    </button>
+                                                </a>
+                                            </dd>
+                                        </dl>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                            {% csrf_token %}
+                            <p class="msg-alert my-2"></p>
+                            <input type="hidden" name="files" value='{% for file in batch.files_alt %}{{file}},,,{% endfor %}'/>
+                            <button class="text-sm button-download-zip py-1 px-2 bg-green-500 hover:bg-green-700 focus:ring-green-500 focus:ring-offset-green-200 text-white w-full transition ease-in duration-200 text-center text-base font-semibold shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 rounded-lg">
+                                (Account: KTDA) Download Zip
+                            </button>
+                        {% endif %}
+                    {% else %}
+                        <h2 class="mx-auto align-center font-bold text-1xl text-gray-600">No invoices generated yet for this sale</h2>
+                    {% endif %}
+                {% endif %}
+            {% endif %}
+        {% endfor %}
+    {% else %}
+        <h2 class="mx-auto align-center font-bold text-1xl text-gray-600 underline"><a href="#cleanup">Check Cleanup Section</a></h2>
+    {% endif %}
 </div>
 {% else %}
-<h2 class="mx-auto align-center font-bold text-1xl text-gray-600">No invoices generated yet</h2>
+    <h2 class="mx-auto align-center font-bold text-1xl text-gray-600">No invoices generated yet</h2>
 {% endif %}
 
 <script>
     $(function(){
         download_zip = $('.button-download-zip')
         for(var i = 0; i < download_zip.length; i++){
-            download_zip.eq(i).on('click', function(){
+            download_zip.eq(i).on('click', function(e){
+                e.stopImmediatePropagation()
                 files = $(this).prev('input[name="files"]').val()
                 files = files.replace(new RegExp(',,,' + '$'), '');
                 files = files.split(',,,')
@@ -90,6 +106,48 @@
                 form_data.append("csrfmiddlewaretoken", csrf_token);
 
                 msg_alert = download_zip.eq(i).siblings('.msg-alert')
+
+                $('#delete-cleanup-invoices-ctx').on('click', function(){
+                    var form_data = new FormData();
+                    msg_alert = $('#delete-alert-message-cleanup');
+                    auction_id = $(this).siblings('input[name="__auction-id"]').val();
+                    sale_id = $(this).siblings('input[name="sale-id"]').val();
+                    csrf_token = $('input[name="csrfmiddlewaretoken"]').val();
+                    forms_number = $('input[name="files"]').length;
+                    form_data.append("csrfmiddlewaretoken", csrf_token);
+                    form_data.append("auction_id", auction_id);
+                    form_data.append("type", "cleanup");
+                    self = $(this)
+                    forms_number >= 1 ? (
+                        self.html('<i class="fa fa-spin fa-spinner"></i> Deleting'),
+                        setTimeout(() => {
+                            $.ajax({
+                                url: '/delete_invoices_data',
+                                dataType: 'json',
+                                cache: false,
+                                contentType: false,
+                                processData: false,
+                                data: form_data,
+                                type: 'post',
+                                success: function (response) {
+                                    self.html('Delete all unallocated (cleanup) invoices')
+                                    msg_alert.html(response.msg);
+                                    setTimeout(() => {
+                                        window.location = window.location;
+                                    }, 2000)
+                                },
+                                error: function (response) {
+                                    msg_alert.html(response.message);
+                                }
+                            })
+                        }, 2000)
+                    ) : (
+                        $(this).html('No invoices to delete'),
+                        setTimeout(() => {
+                            $(this).html('Delete all unallocated (cleanup) invoices')
+                        }, 3000)
+                    )
+                });
 
                 fetch('/download/invoices', {
                     method: 'POST',

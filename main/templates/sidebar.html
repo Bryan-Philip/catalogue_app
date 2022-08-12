@@ -1,5 +1,6 @@
 {% block content %}
 {% load static %}
+{% load include_by_ajax_tags %}
 
 <div x-data="setup()" x-init="$refs.loading.classList.add('hidden');" @resize.window="watchScreen()"
     class="fixed h-0 bg-transparent left-0 top-0">
@@ -87,7 +88,7 @@
                 <!-- Notifications button -->
                 <button
                     @click="isSidebarOpen = true; currentSidebarTab = 'notificationsTab'; isSubHeaderOpen = false"
-                    class="p-2 text-gray-400 bg-white rounded-lg shadow-md hover:text-gray-600 focus:outline-none focus:ring focus:ring-white focus:ring-offset-gray-100 focus:ring-offset-4">
+                    class="notification-icon p-2 relative text-gray-400 bg-white rounded-lg shadow-md hover:text-gray-600 focus:outline-none focus:ring focus:ring-white focus:ring-offset-gray-100 focus:ring-offset-4">
                     <span class="sr-only">Toggle notifications panel</span>
                     <svg aria-hidden="true" class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none"
                         viewBox="0 0 24 24" stroke="currentColor">
@@ -208,7 +209,7 @@
                     <!-- Notifications button -->
                     <button
                         @click="(isSidebarOpen && currentSidebarTab == 'notificationsTab') ? isSidebarOpen = false : isSidebarOpen = true; currentSidebarTab = 'notificationsTab'"
-                        class="p-2 transition-colors rounded-lg shadow-md hover:bg-blue-700 hover:text-white focus:outline-none focus:ring focus:ring-blue-500 focus:ring-offset-white focus:ring-offset-2"
+                        class="notification-icon p-2 relative transition-colors rounded-lg shadow-md hover:bg-blue-700 hover:text-white focus:outline-none focus:ring focus:ring-blue-500 focus:ring-offset-white focus:ring-offset-2"
                         :class="(isSidebarOpen && currentSidebarTab == 'notificationsTab') ? 'text-white bg-blue-500' : 'text-gray-500 bg-white'">
                         <span class="sr-only">Toggle notifications panel</span>
                         <svg aria-hidden="true" class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none"
@@ -309,15 +310,24 @@
                 <section x-show="currentSidebarTab == 'messagesTab'" class="px-4 py-6">
                     <h2 class="text-xl">Messages</h2>
                 </section>
-    
-                <section x-show="currentSidebarTab == 'notificationsTab'" class="px-4 py-6">
-                    <h2 class="text-xl">Notifications</h2>
-                </section>
 
                 <section x-show="currentSidebarTab == 'marksOrderTab'" class="px-4 py-6">
                     <h2 class="text-xl">Order of Marks</h2>
                     {% include './marks_order.html' %}
                 </section>
+    
+                <section x-show="currentSidebarTab == 'notificationsTab'" class="px-4 py-6">
+                    <h2 class="text-xl">Notifications</h2>
+                        <div class="w-full">
+                            {% include_by_ajax 'notifications.html' %}
+                        </div>
+                    <script>
+                        $(document).on('include_by_ajax_all_loaded', function() {
+                            console.info('Update checker initialized!');
+                        });
+                    </script>
+                </section>
+
             </div>
         </div>
         

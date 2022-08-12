@@ -28,6 +28,7 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['l27.0.0.1', 'localhost']
 
+SETTINGS_PATH = os.path.dirname(os.path.dirname(__file__))
 
 # Application definition
 
@@ -39,7 +40,9 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'main'
+    'main',
+    # Third-Party 
+    'include_by_ajax',
 ]
 
 MIDDLEWARE = [
@@ -66,9 +69,11 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
             ],
-            'libraries':{
+            'libraries': {
                 'get_item': 'main.templatetags.get_item',
+                'in_list': 'main.templatetags.in_list',
                 'display_marks': 'main.inclusiontags.display_marks',
+                'git_status': 'main.inclusiontags.git_status',
             },
         },
     },
@@ -139,3 +144,7 @@ MEDIA_URL = '/media/'
 # https://docs.djangoproject.com/en/4.0/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+TEMPLATE_DIRS = (
+    os.path.join(SETTINGS_PATH, 'templates'),
+)

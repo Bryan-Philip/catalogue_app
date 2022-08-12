@@ -16,6 +16,21 @@ def DatabaseQueryProducerCompany(mark):
     except Error as e:
         print(e)
 
+def DatabaseQueryProducerAddress(mark):
+    try:
+        with connect(**CONNECTOR) as connection:
+            ins = (mark,)
+            init_values = "SELECT `postal_address` FROM `producers` WHERE `mark` = %s"
+            with connection.cursor() as cursor:
+                cursor.execute(init_values, ins)
+                rows = cursor.fetchone()
+                if(rows != None):
+                    return rows[0]
+                else:
+                    return None
+    except Error as e:
+        print(e)
+
 def DatabaseQueryWarehouseCompany(code):
     try:
         with connect(**CONNECTOR) as connection:

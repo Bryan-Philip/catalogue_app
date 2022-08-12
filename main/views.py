@@ -175,7 +175,7 @@ def handle_uploaded_sale(f, filename):
         
 class AuctionData:
     def auction_years():
-        auctions = Auctions.objects.all()
+        auctions = Auctions.objects.all().order_by('Pid')
         years = list()
         for auction in auctions:
             years.append(auction.year)
@@ -213,6 +213,7 @@ class AuctionData:
                     years_relation[year].append(inner)
 
         for year in years_relation:
+            # years_relation[year] = sorted()
             years_data[year]['auctions'] = len(years_relation[year])
             years_data[year]['data'] = years_relation[year]
         
@@ -299,6 +300,8 @@ def generate_catalogue(request, year, number):
         }
     )
 def generate_invoices(request, year, number):
+    sales_list = list()
+    cleanup_list = list()
     for auction in AuctionData.auction_years()['years_data'][str(year)]['data']:
         if auction['number'] == str(number):
             auction_data = auction
@@ -311,6 +314,11 @@ def generate_invoices(request, year, number):
                         auction_data['catalogue'] = json.loads(auction_data[val])
                 if(val == 'invoices'):
                     if(auction_data[val] != None):
+                        for invoice in json.loads(auction_data[val]):
+                            if 'sale_id' in invoice:
+                                sales_list.append(invoice['sale_id'])
+                            else:
+                                cleanup_list.append(invoice)
                         auction_data['invoices'] = json.loads(auction_data[val])
                 if(val == 'sales'):
                     if(auction_data[val] != None):
@@ -328,6 +336,7 @@ def generate_invoices(request, year, number):
         sale_date_format = None
         prompt_date = None
         prompt_date_format = None
+    print(cleanup_list)
     return render(
         request,
         'auctions/generate_invoices.html',
@@ -343,10 +352,14 @@ def generate_invoices(request, year, number):
             'catalogue_data': auction_data['catalogue_data'],
             'invoice_data': auction_data['invoice_data'],
             'invoice_number': auction_data['invoice_number'],
+            'sales_list': sales_list,
+            'cleanup_list': cleanup_list,
             'id_': AuctionData.auction_years()['years_data'][str(year)]['data'][0]['id']
         }
     )
 def generate_account_sales(request, year, number):
+    sales_list = list()
+    cleanup_list = list()
     for auction in AuctionData.auction_years()['years_data'][str(year)]['data']:
         if auction['number'] == str(number):
             auction_data = auction
@@ -365,6 +378,11 @@ def generate_account_sales(request, year, number):
                         auction_data['sales'] = json.loads(auction_data[val])
                 if(val == 'account_sales'):
                     if(auction_data[val] != None):
+                        for ac_sale in json.loads(auction_data[val]):
+                            if 'sale_id' in ac_sale:
+                                sales_list.append(ac_sale['sale_id'])
+                            else:
+                                cleanup_list.append(ac_sale)
                         auction_data['account_sales'] = json.loads(auction_data[val])
             break
         else: auction_data = None
@@ -394,6 +412,8 @@ def generate_account_sales(request, year, number):
             'catalogue_data': auction_data['catalogue_data'],
             'account_sale_data': auction_data['account_sale_data'],
             'account_sale_number': auction_data['account_sale_number'],
+            'sales_list': sales_list,
+            'cleanup_list': cleanup_list,
             'id_': AuctionData.auction_years()['years_data'][str(year)]['data'][0]['id']
         }
     )
@@ -578,7 +598,7 @@ def generate_account_sales_data(request):
             'prompt_date': values['prompt_date'],
             'auction_number': values['auction_id'] + '-' + last2(values['auction_year']),
             'auction_number_alt': str(values['auction_year']) + '/' + values['auction_id'],
-            'auction_number_0': str(values['auction_year']) + '/' + str(0) + values['auction_id'],
+            'auction_number_0': str(last2(values['auction_year'])) + '/' + str(0) + values['auction_id'],
             'catalogue_data': values['catalogue_data'],
             'account_sale_data': values['account_sale_data'],
             'account_sale_number': values['account_sale_number'],
@@ -656,7 +676,27 @@ def delete_invoices_data(request):
         return render(request, 'auctions/generate_invoices.html', )
     if request.method == 'POST':
         values = request.POST
-        deleteInvoiceData(values['auction_id'])
+        deleteInvoiceData(values['auction_id'], values['sale_id'])
+        return JsonResponse({'msg': '''
+                                <span id="message-data2" style="color: green;" class="text-center">Invoices Deleted. <strong>Auto-reloading</strong> to sync changes</span>
+                                <script>
+                                    $(function(){
+                                        setTimeout(() => {
+                                            $('#message-data2').slideUp("swing")
+                                        }, 5000)
+                                    })
+                                </script/>
+                            '''})
+    else:
+        return render(request, 'auctions/generate_invoices.html', )
+
+@ensure_csrf_cookie
+def delete_all_invoices_data(request):
+    if request.method == "GET":
+        return render(request, 'auctions/generate_invoices.html', )
+    if request.method == 'POST':
+        values = request.POST
+        deleteInvoiceData(values['auction_id'], values['type'])
         return JsonResponse({'msg': '''
                                 <span id="message-data2" style="color: green;" class="text-center">Invoices Deleted. <strong>Auto-reloading</strong> to sync changes</span>
                                 <script>
@@ -676,7 +716,7 @@ def delete_account_sales_data(request):
         return render(request, 'auctions/generate_account_sales.html', )
     if request.method == 'POST':
         values = request.POST
-        deleteAccountSaleData(values['auction_id'])
+        deleteAccountSaleData(values['auction_id'], values['sale_id'])
         return JsonResponse({'msg': '''
                                 <span id="message-data2" style="color: green;" class="text-center">Account Sales Deleted. <strong>Auto-reloading</strong> to sync changes</span>
                                 <script>
@@ -689,6 +729,26 @@ def delete_account_sales_data(request):
                             '''})
     else:
         return render(request, 'auctions/generate_account_sales.html', )
+
+@ensure_csrf_cookie
+def delete_all_account_sales_data(request):
+    if request.method == "GET":
+        return render(request, 'auctions/generate_invoices.html', )
+    if request.method == 'POST':
+        values = request.POST
+        deleteInvoiceData(values['auction_id'], values['type'])
+        return JsonResponse({'msg': '''
+                                <span id="message-data2" style="color: green;" class="text-center">Invoices Deleted. <strong>Auto-reloading</strong> to sync changes</span>
+                                <script>
+                                    $(function(){
+                                        setTimeout(() => {
+                                            $('#message-data2').slideUp("swing")
+                                        }, 5000)
+                                    })
+                                </script/>
+                            '''})
+    else:
+        return render(request, 'auctions/generate_invoices.html', )
     
 @ensure_csrf_cookie
 def delete_warehouse_confirmations_data(request):
@@ -746,16 +806,20 @@ def download_zipped(request, type):
 
         return resp
 
-def GENERATE_INVOICES(data, custom, id):    
+def GENERATE_INVOICES(data, custom, id):
     retdata = INVOICEGENERATOR(data, custom)
     dirs = retdata['dirs']
     dirs_alt = retdata['dirs_alt']
     outlot = retdata['outlot']
     if len(dirs) >= 1 and len(dirs) >= 1:
+        print("FORM DATA VALUES")
+        print(data)
+        print("FORM DATA VALUES")
         return_data = [{
             "date": DateFormat(date.today()).format("jS M, Y"),
             "files": dirs,
             "files_alt": dirs_alt,
+            "sale_id": data[0]['id'],
         }]
         try:
             updateInvoices(id, return_data)
@@ -773,7 +837,8 @@ def GENERATE_ACCOUNT_SALES(data, custom, id):
     if len(dirs) >= 1 and len(dirs) >= 1:
         return_data = [{
             "date": DateFormat(date.today()).format("jS M, Y"),
-            "files": dirs
+            "files": dirs,
+            "sale_id": data[0]['id'],
         }]
         try:
             updateAccountSales(id, return_data)
