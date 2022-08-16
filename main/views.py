@@ -397,6 +397,10 @@ def generate_account_sales(request, year, number):
         sale_date_format = None
         prompt_date = None
         prompt_date_format = None
+    for auct in AuctionData.auction_years()['years_data'][str(year)]['data']:
+        if auct['number'] == number:
+            __id = auct['id']
+
     return render(
         request,
         'auctions/generate_account_sales.html',
@@ -414,7 +418,7 @@ def generate_account_sales(request, year, number):
             'account_sale_number': auction_data['account_sale_number'],
             'sales_list': sales_list,
             'cleanup_list': cleanup_list,
-            'id_': AuctionData.auction_years()['years_data'][str(year)]['data'][0]['id']
+            'id_': __id
         }
     )
     
@@ -716,6 +720,7 @@ def delete_account_sales_data(request):
         return render(request, 'auctions/generate_account_sales.html', )
     if request.method == 'POST':
         values = request.POST
+        print(values)
         deleteAccountSaleData(values['auction_id'], values['sale_id'])
         return JsonResponse({'msg': '''
                                 <span id="message-data2" style="color: green;" class="text-center">Account Sales Deleted. <strong>Auto-reloading</strong> to sync changes</span>

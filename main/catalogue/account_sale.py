@@ -24,12 +24,12 @@ DATA_ALIAS = {
     "invoice_number_buyer": ['invoice'],
     "mark": ['mark'],
     "warehouse": None,
-    "packages": ['packages'],
+    "packages": ['packages', 'pkgs'],
     "type": ['packing type', 'packaging type'],
     "grade": ['grade'],
-    "net": ['net weight', 'net weight(in kg)'],
+    "net": ['net weight', 'net weight(in kg)', 'net kgs'],
     "gross": ['gross weight', 'gross weight(in kg)'],
-    "base_price": ['base price'],
+    "base_price": ['base price', 'price', 'price $'],
     "broker_starting_price": ['broker starting price', 'broker starting price($)'],
     "price": ['sale price', 'sale price($)'],
     "status": ['status'],
@@ -240,6 +240,9 @@ class DataInterpretor:
                 if(inner_counter >= left_bound-1):
                     if(value != None):
                         if(bc == data_layer-1):
+                            print(row)
+                            print("This is the location of the value => ")
+                            print(value)
                             value = re.sub(r'\t', '', value)
                             RELATION.append(value)
                         inner.append(value)
@@ -484,7 +487,7 @@ def PopulateRow(sheet, level, row_data, catalogue_data):
                     sheet[str(str(DATA_SALE_RELATION[data])+str(level))] = int(row_data[data])
             else:
                 sheet[str(str(DATA_SALE_RELATION[data])+str(level))] = row_data[data]
-            Format.GeneralCenter(sheet[str(str(DATA_SALE_RELATION[data])+str(level))])
+            Format.formatArial11BgWhite(sheet[str(str(DATA_SALE_RELATION[data])+str(level))])
         else:
             # CHECK Outlot Status
             if LOT_STATUS_RELATION[row_data['lot_number']] == 'Sold':
@@ -492,7 +495,7 @@ def PopulateRow(sheet, level, row_data, catalogue_data):
                 sheet[populate_number(DATA_SALE_RELATION[data], level)].number_format = '$#,##0.00'
                 if data == '_payable_amount':
                     sheet.merge_cells(DATA_SALE_RELATION[data] + str(level) + ':N' + str(level))
-                Format.GeneralCenter(sheet[populate_number(DATA_SALE_RELATION[data], level)])
+                Format.formatArial11BgWhite(sheet[populate_number(DATA_SALE_RELATION[data], level)])
                 cell = populate_number(DATA_SALE_RELATION[data], level)
                 NUMBER_FORMAT_CELLS.append(cell)
             else:
@@ -524,7 +527,7 @@ def GenerateAccountSale(data, custom_values, counter, producer):
         file_datac = json.load(fcc_file)
 
     LOT_COMBINED = {producer: list()}
-    
+
     for producer in data:
         lot = data[producer]
         for lot_data in lot:
@@ -550,7 +553,7 @@ def GenerateAccountSale(data, custom_values, counter, producer):
         prompt_date = custom_values['prompt_date']
 
         fs_save_folder = 'media/documents/account_sales/'
-        _filename = 'AccountSale_' + ac_sale_file + '.xlsx'
+        _filename = 'AccountSale_' + '(' + producer + ')' + ac_sale_file + '.xlsx'
         dest_save_path = fs_save_folder + _filename
 
         for producer in data:
@@ -558,6 +561,7 @@ def GenerateAccountSale(data, custom_values, counter, producer):
             producer_company = DatabaseQueryProducerCompany(producer)
             producer_address = DatabaseQueryProducerAddress(producer_search)
             code = producer
+            print(producer)
             address_line1 = producer_company.upper()
             address_line2 = formatAddress(producer_address)[0]
             address_line3 = formatAddress(producer_address)[1]

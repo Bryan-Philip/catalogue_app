@@ -536,7 +536,7 @@ def GenerateInvoice(data, custom_values, counter, buyer):
     with fsc.open(catalogue_data, 'rb+') as fcc_file:
         file_datac = json.load(fcc_file)
 
-    LOT_PTBL = {buyer: list()}
+    LOT_PRME = {buyer: list()}
     LOT_KTDA = {buyer: list()}
 
     for buyer in data:
@@ -547,7 +547,7 @@ def GenerateInvoice(data, custom_values, counter, buyer):
             if lot_company == 'KTDA':
                 LOT_KTDA[buyer].append(lot_data)
             else:
-                LOT_PTBL[buyer].append(lot_data)
+                LOT_PRME[buyer].append(lot_data)
     
     def _Generate(data, buyer, custom_values, type="default"):
         folder='media/resources/'
@@ -564,7 +564,7 @@ def GenerateInvoice(data, custom_values, counter, buyer):
             file_datac = json.load(fcc_file)
 
         invoice_file = GenerateInvoiceNumber(custom_values['auction_number'], counter)['file']
-        if len(LOT_PTBL[buyer]) >= 1:
+        if len(LOT_PRME[buyer]) >= 1:
             invoice_file_alt = GenerateInvoiceNumber(custom_values['auction_number'], counter+1)['file']
         else:
             invoice_file_alt = GenerateInvoiceNumber(custom_values['auction_number'], counter)['file']
@@ -572,7 +572,7 @@ def GenerateInvoice(data, custom_values, counter, buyer):
         fs_save_folder = 'media/documents/invoices/'
         
         invoice_number = GenerateInvoiceNumber(custom_values['auction_number'], counter)['number']
-        if len(LOT_PTBL[buyer]) >= 1:
+        if len(LOT_PRME[buyer]) >= 1:
             invoice_number_alt = GenerateInvoiceNumber(custom_values['auction_number'], counter+1)['number']
         else:
             invoice_number_alt = GenerateInvoiceNumber(custom_values['auction_number'], counter)['number']
@@ -739,10 +739,10 @@ def GenerateInvoice(data, custom_values, counter, buyer):
     _dir_alt = None
     if len(LOT_KTDA[buyer]) >= 1:
         _dir_alt = _Generate(LOT_KTDA, buyer, custom_values, "alt")
-    if len(LOT_PTBL[buyer]) >= 1:
-        _dir = _Generate(LOT_PTBL, buyer, custom_values, "default")
+    if len(LOT_PRME[buyer]) >= 1:
+        _dir = _Generate(LOT_PRME, buyer, custom_values, "default")
     
-    if len(LOT_PTBL[buyer]) >= 1 and len(LOT_KTDA[buyer]) >= 1:
+    if len(LOT_PRME[buyer]) >= 1 and len(LOT_KTDA[buyer]) >= 1:
         counter = counter+1
     else:
         counter == counter

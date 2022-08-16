@@ -36,7 +36,7 @@
                         <p class="msg-alert my-2"></p>
                         <input type="hidden" name="files" value='{% for file in batch.files %}{{file}},,,{% endfor %}'/>
                         <button class="mb-6 text-sm button-download-zip py-1 px-2 bg-green-500 hover:bg-green-700 focus:ring-green-500 focus:ring-offset-green-200 text-white w-full transition ease-in duration-200 text-center text-base font-semibold shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 rounded-lg">
-                            (Account: PTBL) Download Zip
+                            (Account: PRME) Download Zip
                         </button>
                         {% if batch.files_alt|length > 0 %}
                             {% for file in batch.files_alt %}
@@ -97,7 +97,7 @@
                 console.log(files)
                 date = new Date().toDateString();
 
-                filename = isalt ? `Invoices(${date}) Account(TEA COLLECTION)` : `Invoices(${date}) Account(PTBL)`
+                filename = isalt ? `Invoices(${date}) Account(TEA COLLECTION)` : `Invoices(${date}) Account(PRME)`
                 console.log(filename)
                 form_data = new FormData()
                 form_data.append('files', JSON.stringify(files))

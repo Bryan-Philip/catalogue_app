@@ -214,17 +214,17 @@ INSERT INTO `account_sale_number` (`number`) VALUES
 -- Table structure for table `lot_number`
 --
 
-DROP TABLE IF EXISTS `lot_number`;
-CREATE TABLE IF NOT EXISTS `lot_number` (
-  `number` int(55) NOT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+-- DROP TABLE IF EXISTS `lot_number`;
+-- CREATE TABLE IF NOT EXISTS `lot_number` (
+--   `number` int(55) NOT NULL
+-- ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
 --
 -- Dumping data for table `lot_number`
 --
 
-INSERT INTO `lot_number` (`number`) VALUES
-(23000);
+-- INSERT INTO `lot_number` (`number`) VALUES
+-- (23000);
 
 -- --------------------------------------------------------
 

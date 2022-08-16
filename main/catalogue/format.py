@@ -63,13 +63,20 @@ FORMAT_INITIAL = NamedStyle(
 
 FORMAT_UNSOLD_SALE__AC = NamedStyle(
     name="unsold_sale__ac",
-    font= Font(
-        color='FF0000'
+    font = Font(
+        name='Arial Nova Light',
+        size=11,
+        color='FF0000',
+        bold=False,
     ),
     alignment = Alignment(
         horizontal='center',
         vertical='center'
     ),
+    fill = PatternFill(
+        "solid",
+        fgColor="FFFFFFFF"
+    )
 )
 
 FORMAT_CENTER = NamedStyle(
@@ -129,6 +136,23 @@ FORMAT_ARIAL_11 = NamedStyle(
     ),
 )
 
+FORMAT_ARIAL_11_WHITE_BG = NamedStyle(
+    name="arial_nova_light_11_whitebg",
+    font = Font(
+        name='Arial Nova Light',
+        size=11,
+        bold=False,
+    ),
+    alignment = Alignment(
+        horizontal='center',
+        vertical='center'
+    ),
+    fill = PatternFill(
+        "solid",
+        fgColor="FFFFFFFF"
+    )
+)
+
 FORMAT_ARIAL_11_BOLD = NamedStyle(
     name="arial_nova_light_11_bold",
     font = Font(
@@ -153,6 +177,8 @@ class Format:
         cell.style = FORMAT_SUBTITLE
     def formatArial11(cell: cell):
         cell.style = FORMAT_ARIAL_11
+    def formatArial11BgWhite(cell: cell):
+        cell.style = FORMAT_ARIAL_11_WHITE_BG
     def formatArial11Bold(cell: cell):
         cell.style = FORMAT_ARIAL_11_BOLD
     def formatUnsoldAcSale(cell: cell):
