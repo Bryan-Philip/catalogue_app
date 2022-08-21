@@ -144,6 +144,16 @@ def updateWarehouseConfirmationData(id, value):
     with fs.open(filename, 'w') as outfile:
         json.dump(value, outfile, indent=4, default=str)
 
+def updateInvoiceNumber(id, value):
+    a = models.Auctions.objects.get(Pid = id)
+    a.invoice_number = int(value)
+    a.save()
+
+def updateAccountSaleNumber(id, value):
+    a = models.Auctions.objects.get(Pid = id)
+    a.account_sale_number = int(value)
+    a.save()
+
 def deleteInvoiceData(id, sale_id):
     a = models.Auctions.objects.get(Pid = id)
     curr = json.loads(a.invoices)
@@ -165,12 +175,10 @@ def deleteAllInvoiceData(id, type):
         a.invoice_data = None
     a.save()
 
-def deleteAccountSaleData(id, sale_id):
+def deleteAccountSaleData(id):
     a = models.Auctions.objects.get(Pid = id)
-    curr = json.loads(a.account_sales)
-    if(len(curr) > 0):
-        result = [i for i in curr if 'sale_id' in i and not (i['sale_id'] == sale_id)]
-        a.account_sales = json.dumps(result)
+    a.account_sales = None
+    a.account_sale_data = None
     a.save()
 
 def deleteAllAccountSaleData(id, type):

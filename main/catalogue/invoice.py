@@ -437,7 +437,14 @@ def populate_number(val, level):
         counter += 1
         
 def replaceResale(v):
-    return str(v).replace(" ", "").replace("-Resale", "").replace("-resale", "").replace("-RESALE", "").replace("Resale", "").replace("resale", "").replace("RESALE", "")
+    resalestr = ["Resale", "resale", "RESALE"]
+    for resale in resalestr:
+        if resale in str(v):
+            head, sep, tail = str(v).partition(resale)
+            head += sep
+            return str(head).replace(" ", "").replace("-Resale", "").replace("-resale", "").replace("-RESALE", "").replace("Resale", "").replace("resale", "").replace("RESALE", "")
+        else:
+            return v
 
 NUMBER_FORMAT_CELLS = list()
 NUMBER_VOID_CELLS = list()

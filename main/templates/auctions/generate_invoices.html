@@ -2,95 +2,60 @@
 
     <div class="mx-auto h-auto max-w-7xl flex align-center justify-center flex-col">
         {% include './update_sale.html' with year=year number=number %}
+        {% include './update_invoice_number.html' with auction_id=id_ %}
         <div class="mx-auto max-w-7xl grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-4 lg:gap-6 bg-white rounded-lg border-gray-300 p-6">
             {% if data.sales %}
-            {% for sale in data.sales %}
-                {% csrf_token %}
-                <div class="flex items-center justify-start flex-col max-w-2xl mx-auto bg-white p-6 rounded-lg">
-                    <h2 class="mb-4 text-2xl">Generate Invoices for the Sale on Date: <span class="font-bold">{{sale.date}}</span></h2>
-                    <p class="text-blue-500">*Auto-generated fields</p>
-                    <div class="datepicker form-sale-date-picker relative form-floating mb-3 xl:w-96" data-mdb-toggle-button="false">
-                        <input type="text"
-                        class="form-control block w-full px-3 py-1.5 text-base font-normal text-gray-700 bg-white bg-clip-padding border border-solid border-gray-300 rounded transition ease-in-out m-0 focus:text-gray-700 focus:bg-white focus:border-blue-600 focus:outline-none"
-                        placeholder="Sale date" value="{{sale.date_slash}}" name="form-sale-date"/>
-                        <input type="hidden" name="form-sale-date-formatted" value="{{sale_date_format}}"/>
-                        <label for="floatingInput" class="text-gray-700">Sale Date</label>
-                        <button class="datepicker-toggle-button" data-mdb-toggle="datepicker">
-                        <i class="fas fa-calendar datepicker-toggle-icon"></i>
+                {% for sale in data.sales %}
+                    {% csrf_token %}
+                    <div class="flex items-center justify-start flex-col max-w-2xl mx-auto bg-white p-6 rounded-lg">
+                        <h2 class="mb-4 text-2xl">Generate Invoices for the Sale on Date: <span class="font-bold">{{sale.date}}</span></h2>
+                        <p class="text-blue-500">*Auto-generated fields</p>
+                        <div class="datepicker form-sale-date-picker relative form-floating mb-3 xl:w-96" data-mdb-toggle-button="false">
+                            <input type="text"
+                            class="form-control block w-full px-3 py-1.5 text-base font-normal text-gray-700 bg-white bg-clip-padding border border-solid border-gray-300 rounded transition ease-in-out m-0 focus:text-gray-700 focus:bg-white focus:border-blue-600 focus:outline-none"
+                            placeholder="Sale date" value="{{sale.date_slash}}" name="form-sale-date"/>
+                            <input type="hidden" name="form-sale-date-formatted" value="{{sale_date_format}}"/>
+                            <label for="floatingInput" class="text-gray-700">Sale Date</label>
+                            <button class="datepicker-toggle-button" data-mdb-toggle="datepicker">
+                            <i class="fas fa-calendar datepicker-toggle-icon"></i>
+                            </button>
+                        </div>
+                        <div class="datepicker form-prompt-date-picker relative form-floating mb-3 xl:w-96" data-mdb-toggle-button="false">
+                            <input type="text"
+                            class="form-control block w-full px-3 py-1.5 text-base font-normal text-gray-700 bg-white bg-clip-padding border border-solid border-gray-300 rounded transition ease-in-out m-0 focus:text-gray-700 focus:bg-white focus:border-blue-600 focus:outline-none"
+                            placeholder="Prompt date" value="{{prompt_date}}" name="form-prompt-date"/>
+                            <input type="hidden" name="form-prompt-date-formatted" value="{{prompt_date_format}}"/>
+                            <label for="floatingInput" class="text-gray-700">Prompt Date</label>
+                            <button class="datepicker-toggle-button" data-mdb-toggle="datepicker">
+                            <i class="fas fa-calendar datepicker-toggle-icon"></i>
+                            </button>
+                        </div>
+                        <p class="generate-alert-message" class="mt-2 mb-4"></p>
+                        <input type="hidden" name="sale-stamp" value="{{sale.timestamp}}"/>
+                        <input type="hidden" name="sale-id" value="{{sale.id}}"/>
+                        <input type="hidden" name="catalogue-data" value="{{catalogue_data}}"/>
+                        <input type="hidden" name="invoice-data" value="{{invoice_data}}"/>
+                        <input type="hidden" name="invoice-number" value="{{invoice_number}}"/>
+                        <input type="hidden" name="auction-id" value="{{number}}"/>
+                        <input type="hidden" name="auction-year" value="{{year}}"/>
+                        <button
+                            class="generate-invoices-ctx py-2 px-4 w-full max-w-lg bg-blue-600 hover:bg-blue-700 focus:ring-blue-500 focus:ring-offset-blue-200 text-white transition ease-in duration-200 text-center text-base font-semibold shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 rounded-lg">
+                            Generate Invoices
+                        </button>
+                        <p id="delete-alert-message-{{sale.id}}" class="mt-2 mb-4"></p>
+                        <input name="__auction-id" type="hidden" value="{{id_}}"/>
+                        <button
+                            id="delete-invoices-ctx-{{sale.id}}"
+                            class="py-2 px-4 mb-4 w-full max-w-lg bg-red-600 hover:bg-red-700 focus:ring-red-500 focus:ring-offset-red-200 text-white transition ease-in duration-200 text-center text-base font-semibold shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 rounded-lg">
+                            <i class="fa fa-trash-alt mr-2 text-white text-lg"></i>
+                            Delete all invoices for this sale
                         </button>
                     </div>
-                    <div class="datepicker form-prompt-date-picker relative form-floating mb-3 xl:w-96" data-mdb-toggle-button="false">
-                        <input type="text"
-                        class="form-control block w-full px-3 py-1.5 text-base font-normal text-gray-700 bg-white bg-clip-padding border border-solid border-gray-300 rounded transition ease-in-out m-0 focus:text-gray-700 focus:bg-white focus:border-blue-600 focus:outline-none"
-                        placeholder="Prompt date" value="{{prompt_date}}" name="form-prompt-date"/>
-                        <input type="hidden" name="form-prompt-date-formatted" value="{{prompt_date_format}}"/>
-                        <label for="floatingInput" class="text-gray-700">Prompt Date</label>
-                        <button class="datepicker-toggle-button" data-mdb-toggle="datepicker">
-                        <i class="fas fa-calendar datepicker-toggle-icon"></i>
-                        </button>
-                    </div>
-                    <p class="generate-alert-message" class="mt-2 mb-4"></p>
-                    <input type="hidden" name="sale-stamp" value="{{sale.timestamp}}"/>
-                    <input type="hidden" name="sale-id" value="{{sale.id}}"/>
-                    <input type="hidden" name="catalogue-data" value="{{catalogue_data}}"/>
-                    <input type="hidden" name="invoice-data" value="{{invoice_data}}"/>
-                    <input type="hidden" name="invoice-number" value="{{invoice_number}}"/>
-                    <input type="hidden" name="auction-id" value="{{number}}"/>
-                    <input type="hidden" name="auction-year" value="{{year}}"/>
-                    <button
-                        class="generate-invoices-ctx py-2 px-4 w-full max-w-lg bg-blue-600 hover:bg-blue-700 focus:ring-blue-500 focus:ring-offset-blue-200 text-white transition ease-in duration-200 text-center text-base font-semibold shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 rounded-lg">
-                        Generate Invoices
-                    </button>
-                    <p id="delete-alert-message-{{sale.id}}" class="mt-2 mb-4"></p>
-                    <input name="__auction-id" type="hidden" value="{{id_}}"/>
-                    <button
-                        id="delete-invoices-ctx-{{sale.id}}"
-                        class="py-2 px-4 mb-4 w-full max-w-lg bg-red-600 hover:bg-red-700 focus:ring-red-500 focus:ring-offset-red-200 text-white transition ease-in duration-200 text-center text-base font-semibold shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 rounded-lg">
-                        <i class="fa fa-trash-alt mr-2 text-white text-lg"></i>
-                        Delete all invoices for this sale
-                    </button>
-                </div>
-                {% include './invoices.html' with invoices=data.invoices sale_id=sale.id sales_list=sales_list cleanup_list=cleanup_list sale_date=sale.date %}
-            {% endfor %}
+                    {% include './invoices.html' with invoices=data.invoices sale_id=sale.id sales_list=sales_list cleanup_list=cleanup_list sale_date=sale.date %}
+                {% endfor %}
             {% else %}
-                {% csrf_token %}
-                <div class="flex items-center justify-center flex-col max-w-2xl mx-auto">
-                    <p class="text-blue-500">*Auto-generated fields</p>
-                    <div class="datepicker relative form-floating mb-3 xl:w-96" data-mdb-toggle-button="false">
-                        <input type="text"
-                        class="form-control block w-full px-3 py-1.5 text-base font-normal text-gray-700 bg-white bg-clip-padding border border-solid border-gray-300 rounded transition ease-in-out m-0 focus:text-gray-700 focus:bg-white focus:border-blue-600 focus:outline-none"
-                        placeholder="Sale date" value="{{sale_date}}" name="form-sale-date"/>
-                        <label for="floatingInput" class="text-gray-700">Sale Date</label>
-                        <button class="datepicker-toggle-button" data-mdb-toggle="datepicker">
-                        <i class="fas fa-calendar datepicker-toggle-icon"></i>
-                        </button>
-                    </div>
-                    <div class="datepicker relative form-floating mb-3 xl:w-96" data-mdb-toggle-button="false">
-                        <input type="text"
-                        class="form-control block w-full px-3 py-1.5 text-base font-normal text-gray-700 bg-white bg-clip-padding border border-solid border-gray-300 rounded transition ease-in-out m-0 focus:text-gray-700 focus:bg-white focus:border-blue-600 focus:outline-none"
-                        placeholder="Prompt date" value="{{prompt_date}}" name="form-prompt-date"/>
-                        <label for="floatingInput" class="text-gray-700">Prompt Date</label>
-                        <button class="datepicker-toggle-button" data-mdb-toggle="datepicker">
-                        <i class="fas fa-calendar datepicker-toggle-icon"></i>
-                        </button>
-                    </div>
-                    <p class="generate-alert-message mt-2 mb-4 pb-2 text-center relative"></p>
-                    <input type="hidden" name="sale-stamp" value="{{sale.timestamp}}"/>
-                    <input type="hidden" name="sale-id" value="{{sale.id}}"/>
-                    <input type="hidden" name="auction-id" value="{{number}}"/>
-                    <input type="hidden" name="auction-year" value="{{year}}"/>
-                    <button
-                        class="generate-invoices-ctx py-2 px-4 w-full max-w-lg bg-blue-600 hover:bg-blue-700 focus:ring-blue-500 focus:ring-offset-blue-200 text-white transition ease-in duration-200 text-center text-base font-semibold shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 rounded-lg">
-                        Generate Invoices
-                    </button>
-                    <p id="delete-alert-message-{{sale.id}}" class="mt-2 mb-4"></p>
-                    <input name="__auction-id" type="hidden" value="{{id_}}"/>
-                    <button
-                        id="delete-invoices-ctx-{{sale.id}}"
-                        class="py-2 px-4 mb-4 w-full max-w-lg bg-red-600 hover:bg-red-700 focus:ring-red-500 focus:ring-offset-red-200 text-white transition ease-in duration-200 text-center text-base font-semibold shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 rounded-lg">
-                        <i class="fa fa-trash-alt mr-2 text-white text-lg"></i>
-                        Delete all invoices for this sale
-                    </button>
+                <div class="flex items-center justify-center flex-col max-w-xl mx-auto py-4">
+                    <p class="text-blue-500">* Upload <strong><a href="../">Sales</a></strong> to Generate Invoices</p>
                 </div>
             {% endif %}
         </div>
@@ -100,7 +65,7 @@
         {% if cleanup_list|length > 0 %}
             <div class="mx-auto max-w-7xl grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-4 lg:gap-6 bg-white rounded-lg border-gray-300 p-6">
                 <div class="lg:col-span-2 flex flex-col content-center justify-center mt-10 m-4">
-                    <h2 class="mx-auto align-center font-bold text-1xl text-white bg-blue-500 px-4 py-2 rounded-md w-max text-center">Cleanup Section</h2>
+                    <h2 class="mx-auto align-center font-bold text-1xl text-white bg-blue-500 px-4 py-2 rounded-md w-max text-center"><em>Cleanup Section</em></h2>
                     <p class="w-full text-center font-bold text-gray-500">Invoices that don't have any sale attached to them will be dumped here.</p>
                 </div>
                 {% for batch in cleanup_list %}
@@ -200,7 +165,7 @@
                 title_layer = title_field.val()
                 left_bound = left_field.val()
                 file = file_field.val()
-                id = button.siblings('input[name="sale-id"]').val();
+                id = button.siblings('input[name="individual-sale-id"]').val();
                 auction_Pid = button.siblings('input[name="id"]').val();
 
                 data_layers.push(title_layer)
@@ -315,6 +280,7 @@
                     }
 
                     if(allow === true){
+                        self.attr({'disabled': 'disabled'})
                         self.html('<i class="fa fa-spin fa-spinner"></i> Generating');
                         $.ajax({
                             url: '/generate_invoices',
@@ -325,6 +291,7 @@
                             data: form_data,
                             type: 'post',
                             success: function (response) {
+                                self.removeAttr('disabled')
                                 self.html('Generate Invoices')
                                 msg_alert.html(response.msg);
                                 setTimeout(() => {
@@ -332,8 +299,9 @@
                                 }, 2000)
                             },
                             error: function (response) {
+                                self.removeAttr('disabled')
                                 self.html('Generate Invoices')
-                                msg_alert.html(response.message);
+                                msg_alert.html(response.msg);
                             }
                         })
                     }

@@ -233,7 +233,8 @@
                             }
                     }
 
-                    if(allow === true){
+                    if(allow == true){
+                        self.attr({'disabled': 'disabled'})
                         self.html('<i class="fa fa-spin fa-spinner"></i> Generating');
                         $.ajax({
                             url: '/generate_warehouse_confirmations',
@@ -244,6 +245,7 @@
                             data: form_data,
                             type: 'post',
                             success: function (response) {
+                                self.removeAttr('disabled')
                                 self.html('Generate Warehouse Confirmations')
                                 msg_alert.html(response.msg);
                                 setTimeout(() => {
@@ -251,7 +253,7 @@
                                 }, 2000)
                             },
                             error: function (response) {
-                                msg_alert.html(response.message);
+                                msg_alert.html(response.msg);
                             }
                         })
                     }

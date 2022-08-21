@@ -8,6 +8,7 @@ from django.core.files.storage import FileSystemStorage
 import json
 from main.catalogue.format import *
 from main.catalogue.helper import *
+from datetime import datetime
 
 DATA_LETTERS = ['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z']
 DATA_ALIAS = {
@@ -164,13 +165,14 @@ def CloseAccountSaleNumber(account_sale_number, Pid):
     except Error as e:
         print(e)
 
-def GenerateAccountSaleNumber(auction_number, auction_number_alt, counter):
+def GenerateAccountSaleNumber(auction_number, auction_number_alt, auction_year, _auction_number, counter):
     base = 'PRME/'
     base_conform = 'PRME_'
     return {
         'number': base + str(auction_number) + '/' + Helper.number_prefix(counter),
         'number_alt': base + str(auction_number_alt)  + '/' + Helper.number_prefix(counter),
-        'file': base_conform + str(auction_number) + '_' + Helper.number_prefix(counter)
+        'file': base_conform + str(auction_number) + '_' + Helper.number_prefix(counter),
+        'ac_sale': base + str(last2(auction_year)) + '/' + str(_auction_number)
     }
     # return {
     #     'number': base + str(auction_number) + '/' + str(AcSaleCounter()),
@@ -219,6 +221,16 @@ def getAliasRelation(value):
                     continue
         else: continue
 
+def last2(s):
+    s = str(s)
+    length = len(s)
+    val = ''
+    counter = 0
+    for v in s:
+        if(counter >= length-2):
+            val += s[counter]
+        counter += 1
+    return val
 class DataInterpretor:
     def init_data(left_bound, data_layer, file):
         left_bound = int(left_bound)
@@ -240,9 +252,6 @@ class DataInterpretor:
                 if(inner_counter >= left_bound-1):
                     if(value != None):
                         if(bc == data_layer-1):
-                            print(row)
-                            print("This is the location of the value => ")
-                            print(value)
                             value = re.sub(r'\t', '', value)
                             RELATION.append(value)
                         inner.append(value)
@@ -302,6 +311,7 @@ def StackGenerator(input_data, catalogue_data):
     global PRODUCERS
     global PRODUCERS_RELATION
     global PRODUCERS_OUTLOT
+    combined = list()
     counter = 0
     for file in input_data:
         STACK_DATA[counter] = DataInterpretor.generate_data(
@@ -312,7 +322,9 @@ def StackGenerator(input_data, catalogue_data):
             )
         )
         counter += 1
-    STACK_DATA = STACK_DATA[0]
+    for data in STACK_DATA.values():
+        combined += data
+    STACK_DATA = combined
     for lot in STACK_DATA:
         LOT_STATUS_RELATION[lot['lot_number']] = lot['status']
     for data in STACK_DATA:
@@ -328,6 +340,15 @@ def StackGenerator(input_data, catalogue_data):
                 inner_val[value] = None
         populated.append(inner_val)
     
+    def StackAccess(l, v):
+        lval = list()
+        for lot in STACK_DATA:
+            for val in lot:
+                if val == "invoice_number_buyer":
+                    if lot[val] == l:
+                        lval = lot
+                        return lval[v]
+    
     folder='media/documents/catalogue_data'
     fsc = FileSystemStorage(location=folder)
     
@@ -335,9 +356,14 @@ def StackGenerator(input_data, catalogue_data):
         file_datac = json.load(fcc_file)
         
     for lot in populated:
-        lot['producer'] = GetAcSaleProducerMark(file_datac, lot['invoice_number_buyer'])
-        if lot['invoice_number_buyer'] != '':
-            PRODUCERS.append(re.sub(r'[0-9]', '', GetAcSaleProducerMark(file_datac, lot['invoice_number_buyer'])))
+        lot['producer'] = GetAcSaleProducerMark(file_datac, replaceResale(lot['invoice_number_buyer']))
+        if replaceResale(lot['invoice_number_buyer']) != '':
+            mark_from_sale = GetAcSaleProducerMark(file_datac, replaceResale(lot['invoice_number_buyer']))
+            if mark_from_sale != None:
+                PRODUCERS.append(re.sub(r'[0-9]', '', GetAcSaleProducerMark(file_datac, replaceResale(lot['invoice_number_buyer']))))
+            else:
+                PRODUCERS.append(re.sub(r'[0-9]', '', StackAccess(replaceResale(lot['invoice_number_buyer']), "mark")))
+
     PRODUCERS = list(set(PRODUCERS))
     print(PRODUCERS)
     for producer in PRODUCERS:
@@ -358,8 +384,6 @@ def StackGenerator(input_data, catalogue_data):
                     # print('-- outlot --')
                     # print(_lot)
                     PRODUCERS_OUTLOT.append(_lot)
-
-    print(LOT_STATUS_RELATION)
     
 # def arrangeData():
 #     global BUYERS
@@ -466,6 +490,16 @@ def populate_number(val, level):
             return val
         counter += 1
 
+def replaceResale(v):
+    resalestr = ["Resale", "resale", "RESALE"]
+    for resale in resalestr:
+        if resale in str(v):
+            head, sep, tail = str(v).partition(resale)
+            head += sep
+            return str(head).replace(" ", "").replace("-Resale", "").replace("-resale", "").replace("-RESALE", "").replace("Resale", "").replace("resale", "").replace("RESALE", "")
+        else:
+            return v
+
 NUMBER_FORMAT_CELLS = list()
 def PopulateRow(sheet, level, row_data, catalogue_data):
     global NUMBER_FORMAT_CELLS
@@ -481,7 +515,7 @@ def PopulateRow(sheet, level, row_data, catalogue_data):
                 # print('row data')
                 # print(row_data)
                 # print(row_data['invoice_number_buyer'])
-                sheet[str(str(DATA_SALE_RELATION[data])+str(level))] = GetAcSaleProducerMark(catalogue_data, row_data['invoice_number_buyer'])
+                sheet[str(str(DATA_SALE_RELATION[data])+str(level))] = GetAcSaleProducerMark(catalogue_data, replaceResale(row_data['invoice_number_buyer']))
             elif(data == 'packages' or data == 'net'):
                 if row_data[data] != None:
                     sheet[str(str(DATA_SALE_RELATION[data])+str(level))] = int(row_data[data])
@@ -530,6 +564,8 @@ def GenerateAccountSale(data, custom_values, counter, producer):
 
     for producer in data:
         lot = data[producer]
+        if producer == 'CUPATEA':
+            print(lot)
         for lot_data in lot:
             LOT_COMBINED[producer].append(lot_data)
 
@@ -543,11 +579,13 @@ def GenerateAccountSale(data, custom_values, counter, producer):
         file_data = template_default
         ACsale_template = load_workbook(filename = file_data)
 
-        ac_sale_file = GenerateAccountSaleNumber(custom_values['auction_number'], custom_values['auction_number_alt'], counter)['file']
+        ac_sale_file = GenerateAccountSaleNumber(custom_values['auction_number'], custom_values['auction_number_alt'], custom_values['auction_year'], custom_values['_auction_number'], counter)['file']
 
-        account_sale_values = GenerateAccountSaleNumber(custom_values['auction_number'], custom_values['auction_number_alt'], counter)
+        account_sale_values = GenerateAccountSaleNumber(custom_values['auction_number'], custom_values['auction_number_alt'], custom_values['auction_year'], custom_values['_auction_number'], counter)
         ac_sale_data = custom_values['account_sale_data']
         account_sale_number_alt = account_sale_values['number_alt']
+
+        ac_sale_number = account_sale_values['ac_sale']
 
         sale_date = custom_values['sale_date']
         prompt_date = custom_values['prompt_date']
@@ -561,19 +599,21 @@ def GenerateAccountSale(data, custom_values, counter, producer):
             producer_company = DatabaseQueryProducerCompany(producer)
             producer_address = DatabaseQueryProducerAddress(producer_search)
             code = producer
-            print(producer)
             address_line1 = producer_company.upper()
             address_line2 = formatAddress(producer_address)[0]
             address_line3 = formatAddress(producer_address)[1]
+            # Auction Date Title
+            auction_date_start = "AUCTION No. " + str(custom_values['auction_number_alt']) + " of "
+            auction_date_end = ", " + custom_values['auction_year']
             meta_relation = {
-                'account_sale_number': account_sale_number_alt,
+                'account_sale_number': ac_sale_number,
                 'sale_date':  sale_date,
                 'sale_date_alt': sale_date,
                 'prompt_date': prompt_date,
                 'receiver_address_line1': address_line1,
                 'receiver_address_line2': address_line2,
                 'receiver_address_line3': address_line3,
-                'auction_number': custom_values['auction_number'],
+                'auction_number': auction_date_start + custom_values['auction_date_title'] + auction_date_end,
                 'auction_number_alt': custom_values['auction_number_alt']
             }
             lot_main = list()
@@ -597,7 +637,10 @@ def GenerateAccountSale(data, custom_values, counter, producer):
             main_length = len(lot_main)
             secondary_length = len(lot_secondary)
             data_length = (main_length)+(secondary_length)
-            lot_secondary_ac_start = lot_secondary_start+(main_length-1)
+            if main_length != 0:
+                lot_secondary_ac_start = lot_secondary_start+(main_length-1)
+            else:
+                lot_secondary_ac_start = lot_secondary_start
             lot_secondary_title = lot_secondary_title+(main_length-1)
             lot_end = lot_secondary_ac_start
             if main_length != 0:
@@ -609,6 +652,9 @@ def GenerateAccountSale(data, custom_values, counter, producer):
                 lot_end += (secondary_length-1)
             balance_proceeds = tax_summary+1
             total_charges = tax_summary
+            other_charges = tax_summary-1
+            warehouse_charges = tax_summary-2
+            crates_charges = tax_summary-3
 
             # DEBUG VALUES
             # print("PROMPT DATE => " + str(prompt_date))
@@ -655,9 +701,17 @@ def GenerateAccountSale(data, custom_values, counter, producer):
                     ACsale_template.active[DATA_ACCOUNT_SALE_TAX_SUMMARY[summary]+str(tax_summary)] = '=SUM(' + DATA_ACCOUNT_SALE_TAX_SUMMARY['gross'] + str(tax_summary) + ':' + DATA_ACCOUNT_SALE_TAX_SUMMARY['whtax'] + str(tax_summary) + ')'
                     ACsale_template.active[DATA_ACCOUNT_SALE_TAX_SUMMARY[summary]+str(tax_summary)].number_format = '#,##0.00'
             for meta in DATA_ACCOUNT_SALE_META:
-                ACsale_template.active[DATA_ACCOUNT_SALE_META[meta]] = meta_relation[meta]
+                if meta == 'prompt_date':
+                    date = datetime.strptime(
+                        meta_relation[meta],
+                        '%d/%m/%Y'
+                    )
+                    ACsale_template.active[DATA_ACCOUNT_SALE_META[meta]] = date
+                else:
+                    ACsale_template.active[DATA_ACCOUNT_SALE_META[meta]] = meta_relation[meta]
 
             # BALANCE PROCEEDS PLACEMENT
+            ACsale_template.active['M'+str(total_charges)] = '=SUM(M' + str(crates_charges) + ':' + 'M' + str(other_charges) + ')'
             ACsale_template.active['M'+str(balance_proceeds)] = '=ABS(M' + str(total_charges) + '-' + 'M' + str(totals) + ')'
             ACsale_template.active['M'+str(balance_proceeds)].number_format = '#,##0.00'
 
@@ -666,6 +720,7 @@ def GenerateAccountSale(data, custom_values, counter, producer):
             ACsale_template.active.merge_cells('M' + str(tax_summary) + ':N' + str(tax_summary))
             ACsale_template.active.merge_cells('M' + str(balance_proceeds) + ':N' + str(balance_proceeds))
             ACsale_template.active.merge_cells('M' + str(totals) + ':N' + str(totals))
+            ACsale_template.active[DATA_ACCOUNT_SALE_META["prompt_date"]].number_format = 'dd-mmm-yy'
             
             ACsale_template.active.title = ac_sale_file
             
