@@ -1,0 +1,138 @@
+{% block content %}
+
+    <div class="mx-auto max-w-7xl grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-4 lg:gap-6 bg-white rounded-lg border-gray-300 p-6">
+        <div class="bg-gray-200 p-4 rounded-lg">
+            <p class="font-bold text-center text-lg bg-gray-100 py-2 px-6 rounded-md w-max mx-auto">Starting Invoice Number</p>
+            <p class="msg-alert__ my-2"></p>
+            <div class="grid grid-cols-5 gap-4 updater">
+                {% csrf_token %}
+                <input type="hidden" name="u-auction-id" id="u-auction-id" value="{{auction_id}}"/>
+                <button id="reset-invoice-number" class="bg-red-500 col-span-1 hover:bg-red-700 py-2 px-4 w-full max-w-lg focus:ring-red-500 focus:ring-offset-red-600 text-white transition ease-in duration-200 text-center text-base font-semibold shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 rounded-lg">Reset</button>
+                <input type="number" class="w-full p-2 col-span-2 rounded-md border-2 border-gray-100 outline-none" id="invoice-val" placeholder="Current number: {{invoice_number}}" value="{{invoice_number}}"/>
+                <button id="update-invoice-number" class="bg-yellow-500 col-span-2 hover:bg-yellow-700 py-2 px-4 w-full max-w-lg focus:ring-yellow-500 focus:ring-offset-yellow-600 text-white transition ease-in duration-200 text-center text-base font-semibold shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 rounded-lg">Update Number</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="text/javascript">
+        $(function (e) {
+            button_update = $('#update-invoice-number');
+            button_reset = $('#reset-invoice-number');
+            function updateVal(type, ctx){
+                var form_data = new FormData();
+                
+                if(type == "reset"){
+                    invoice_number = 1;
+                }
+                else {
+                    invoice_number = Number($('#invoice-val').val());
+                }
+
+                msg_alert = ctx.parents('.updater').siblings('.msg-alert__');
+                csrf_token = $('input[name="csrfmiddlewaretoken"]').val();
+                auction_id = $('#u-auction-id').val()
+                                
+                form_data.append("csrfmiddlewaretoken", csrf_token);
+                form_data.append("value", invoice_number);
+                form_data.append("auction_id", auction_id);
+
+                if(invoice_number <= 0){
+                    allow = false
+                }
+                else {
+                    allow = true
+                }
+                
+                allow ?
+                    $.ajax({
+                        url: '/update_invoice_number',
+                        dataType: 'json',
+                        cache: false,
+                        contentType: false,
+                        processData: false,
+                        data: form_data,
+                        type: 'post',
+                        success: function (response) {
+                            msg_alert.html(response.msg);
+                            $('#invoice-val').val(response.value);
+                            $('#invoice-val').attr({'placeholder': `Current number: ${response.value}`});
+                        },
+                        error: function (response) {
+                            msg_alert.html(response.msg);
+                        }
+                    })
+                : (
+                    msg_alert.html('Choose a number greater than 0'),
+                    setTimeout(() => {
+                        msg_alert.html('')
+                    }, 5000)
+                )
+            }
+            button_update.on('click', function (){
+                var self = $(this)
+                iziToast.show({
+                    timeout: 8000,
+                    titleColor: '#222222',
+                    messageColor: '#000000',
+                    backgroundColor: 'rgb(240,240,240)',
+                    icon: 'fa fa-exclamation-triangle',
+                    title: 'Warning',
+                    message: 'This will change the starting invoice number!',
+                    position: 'center',
+                    progressBarColor: 'red',
+                    buttons: [
+                        [
+                            '<button>Continue</button>',
+                            function (instance, toast) {
+                                updateVal("update", self)
+                                instance.hide({
+                                    transitionOut: 'fadeOutUp'
+                                }, toast);
+                            }
+                        ],[
+                            '<button>Cancel</button>',
+                            function (instance, toast) {
+                                instance.hide({
+                                    transitionOut: 'fadeOutUp'
+                                }, toast);
+                            }
+                        ]
+                    ]
+                });
+            });
+            button_reset.on('click', function (){
+                var self = $(this)
+                iziToast.show({
+                    timeout: 8000,
+                    titleColor: '#222222',
+                    messageColor: '#000000',
+                    backgroundColor: 'rgb(240,240,240)',
+                    icon: 'fa fa-exclamation-triangle',
+                    title: 'Warning',
+                    message: 'This will reset the starting invoice number!',
+                    position: 'center',
+                    progressBarColor: 'red',
+                    buttons: [
+                        [
+                            '<button>Continue</button>',
+                            function (instance, toast) {
+                                updateVal("reset", self)
+                                instance.hide({
+                                    transitionOut: 'fadeOutUp'
+                                }, toast);
+                            }
+                        ],[
+                            '<button>Cancel</button>',
+                            function (instance, toast) {
+                                instance.hide({
+                                    transitionOut: 'fadeOutUp'
+                                }, toast);
+                            }
+                        ]
+                    ]
+                });
+            });
+        });
+    </script>
+
+{% endblock content %}

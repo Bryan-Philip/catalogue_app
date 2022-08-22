@@ -2,33 +2,42 @@
 
     <div class="mx-auto h-auto max-w-7xl flex align-center justify-center flex-col">
         {% include './update_sale.html' with year=year number=number %}
+        {% include './update_account_sale_number.html' with auction_id=id_ %}
         <div class="mx-auto max-w-7xl grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-4 lg:gap-6 bg-white rounded-lg border-gray-300 p-6">
             {% if data.sales %}
-            {% for sale in data.sales %}
                 {% csrf_token %}
                 <div class="flex items-center justify-start flex-col max-w-2xl mx-auto bg-white p-6 rounded-lg">
-                    <h2 class="mb-4 text-2xl">Generate Account Sales for the Sale on Date: <span class="font-bold">{{sale.date}}</span></h2>
+                    <h2 class="mb-4 text-2xl">Generate Account Sales for this Auction</h2>
                     <p class="text-blue-500">*Auto-generated fields</p>
                     <div class="datepicker form-sale-date-picker relative form-floating mb-3 xl:w-96" data-mdb-toggle-button="false">
                         <input type="text"
                         class="form-control block w-full px-3 py-1.5 text-base font-normal text-gray-700 bg-white bg-clip-padding border border-solid border-gray-300 rounded transition ease-in-out m-0 focus:text-gray-700 focus:bg-white focus:border-blue-600 focus:outline-none"
-                        placeholder="Sale date" value="{{sale.date_slash}}" name="form-sale-date"/>
+                        placeholder="Sale date" value="{{sale_date}}" name="form-sale-date"/>
                         <input type="hidden" name="form-sale-date-formatted" value="{{sale_date_format}}"/>
                         <label for="floatingInput" class="text-gray-700">Sale Date</label>
-                        <button class="datepicker-toggle-button" data-mdb-toggle="datepicker">
+                        <button class="datepicker-toggle-button otline-none focus:outline-none" data-mdb-toggle="datepicker">
                         <i class="fas fa-calendar datepicker-toggle-icon"></i>
                         </button>
                     </div>
-                    <div class="datepicker form-prompt-date-picker relative form-floating mb-3 xl:w-96" data-mdb-toggle-button="false">
+                    <div class="datepicker form-prompt-date-picker relative form-floating mb-4 xl:w-96" data-mdb-toggle-button="false">
                         <input type="text"
                         class="form-control block w-full px-3 py-1.5 text-base font-normal text-gray-700 bg-white bg-clip-padding border border-solid border-gray-300 rounded transition ease-in-out m-0 focus:text-gray-700 focus:bg-white focus:border-blue-600 focus:outline-none"
                         placeholder="Prompt date" value="{{prompt_date}}" name="form-prompt-date"/>
-                        <input type="hidden" name="form-prompt-date-formatted" value="{{prompt_date_format}}"/>
+                        <input type="hidden" name="form-prompt-date-formatted" value="{{prompt_date}}"/>
                         <label for="floatingInput" class="text-gray-700">Prompt Date</label>
-                        <button class="datepicker-toggle-button" data-mdb-toggle="datepicker">
-                        <i class="fas fa-calendar datepicker-toggle-icon"></i>
+                        <button class="datepicker-toggle-button outline-none focus:outline-none" data-mdb-toggle="datepicker">
+                            <i class="fas fa-calendar datepicker-toggle-icon"></i>
                         </button>
                     </div>
+                    <p class="bg-gray-200 text-gray-500 px-4 py-1 font-bold ml-0 relative rounded-md">AUCTION No. {{year}}/{{number}} of</p>
+                    <input
+                        type="text"
+                        class="form-control block w-full px-3 py-2.5 my-1\.5 text-base font-normal text-gray-700 bg-white bg-clip-padding border border-solid border-gray-300 rounded transition ease-in-out m-0 focus:text-gray-700 focus:bg-white focus:border-blue-600 focus:outline-none"
+                        name="auction-date-title"
+                        id="auction-date-title"
+                        placeholder="Auction Dates"
+                    />
+                    <p class="bg-gray-200 text-gray-500 px-4 py-1 font-bold ml-0 relative rounded-md">{{year}}</p>
                     <p class="generate-alert-message" class="mt-2 mb-4"></p>
                     <input type="hidden" name="sale-stamp" value="{{sale.timestamp}}"/>
                     <input type="hidden" name="sale-id" value="{{sale.id}}"/>
@@ -38,59 +47,23 @@
                     <input type="hidden" name="auction-id" value="{{number}}"/>
                     <input type="hidden" name="auction-year" value="{{year}}"/>
                     <button
-                        class="generate-account-sales-ctx py-2 px-4 w-full max-w-lg bg-blue-600 hover:bg-blue-700 focus:ring-blue-500 focus:ring-offset-blue-200 text-white transition ease-in duration-200 text-center text-base font-semibold shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 rounded-lg">
+                        id="generate-account-sales-ctx"
+                        class="py-2 px-4 mt-3 w-full max-w-lg bg-blue-600 hover:bg-blue-700 focus:ring-blue-500 focus:ring-offset-blue-200 text-white transition ease-in duration-200 text-center text-base font-semibold shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 rounded-lg">
                         Generate Account Sales
                     </button>
-                    <p id="delete-alert-message-{{sale.id}}" class="mt-2 mb-4"></p>
+                    <p id="delete-alert-message" class="mt-2 mb-4"></p>
                     <input name="__auction-id" type="hidden" value="{{id_}}"/>
                     <button
-                        id="delete-account-sales-ctx-{{sale.id}}"
+                        id="delete-account-sales-ctx"
                         class="py-2 px-4 mb-4 w-full max-w-lg bg-red-600 hover:bg-red-700 focus:ring-red-500 focus:ring-offset-red-200 text-white transition ease-in duration-200 text-center text-base font-semibold shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 rounded-lg">
                         <i class="fa fa-trash-alt mr-2 text-white text-lg"></i>
-                        Delete all account sales for this sale
+                        Delete all Account Sales for this Auction
                     </button>
                 </div>
                 {% include './account_sales.html' with account_sales=data.account_sales sale_id=sale.id sales_list=sales_list cleanup_list=cleanup_list sale_date=sale.date %}
-            {% endfor %}
             {% else %}
-                {% csrf_token %}
-                <div class="flex items-center justify-center flex-col max-w-2xl mx-auto">
-                    <p class="text-blue-500">*Auto-generated fields</p>
-                    <div class="datepicker relative form-floating mb-3 xl:w-96" data-mdb-toggle-button="false">
-                        <input type="text"
-                        class="form-control block w-full px-3 py-1.5 text-base font-normal text-gray-700 bg-white bg-clip-padding border border-solid border-gray-300 rounded transition ease-in-out m-0 focus:text-gray-700 focus:bg-white focus:border-blue-600 focus:outline-none"
-                        placeholder="Sale date" value="{{sale_date}}" name="form-sale-date"/>
-                        <label for="floatingInput" class="text-gray-700">Sale Date</label>
-                        <button class="datepicker-toggle-button" data-mdb-toggle="datepicker">
-                        <i class="fas fa-calendar datepicker-toggle-icon"></i>
-                        </button>
-                    </div>
-                    <div class="datepicker relative form-floating mb-3 xl:w-96" data-mdb-toggle-button="false">
-                        <input type="text"
-                        class="form-control block w-full px-3 py-1.5 text-base font-normal text-gray-700 bg-white bg-clip-padding border border-solid border-gray-300 rounded transition ease-in-out m-0 focus:text-gray-700 focus:bg-white focus:border-blue-600 focus:outline-none"
-                        placeholder="Prompt date" value="{{prompt_date}}" name="form-prompt-date"/>
-                        <label for="floatingInput" class="text-gray-700">Prompt Date</label>
-                        <button class="datepicker-toggle-button" data-mdb-toggle="datepicker">
-                        <i class="fas fa-calendar datepicker-toggle-icon"></i>
-                        </button>
-                    </div>
-                    <p class="generate-alert-message mt-2 mb-4 pb-2 text-center relative"></p>
-                    <input type="hidden" name="sale-stamp" value="{{sale.timestamp}}"/>
-                    <input type="hidden" name="sale-id" value="{{sale.id}}"/>
-                    <input type="hidden" name="auction-id" value="{{number}}"/>
-                    <input type="hidden" name="auction-year" value="{{year}}"/>
-                    <button
-                        class="generate-account-sales-ctx py-2 px-4 w-full max-w-lg bg-blue-600 hover:bg-blue-700 focus:ring-blue-500 focus:ring-offset-blue-200 text-white transition ease-in duration-200 text-center text-base font-semibold shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 rounded-lg">
-                        Generate Account Sales
-                    </button>
-                    <p id="delete-alert-message-{{sale.id}}" class="mt-2 mb-4"></p>
-                    <input name="__auction-id" type="hidden" value="{{id_}}"/>
-                    <button
-                        id="delete-account-sales-ctx-{{sale.id}}"
-                        class="py-2 px-4 mb-4 w-full max-w-lg bg-red-600 hover:bg-red-700 focus:ring-red-500 focus:ring-offset-red-200 text-white transition ease-in duration-200 text-center text-base font-semibold shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 rounded-lg">
-                        <i class="fa fa-trash-alt mr-2 text-white text-lg"></i>
-                        Delete all account sales for this sale
-                    </button>
+                <div class="flex items-center justify-center flex-col max-w-xl mx-auto py-4">
+                    <p class="text-blue-500">* Upload <strong><a href="../">Sales</a></strong> to Generate Account Sales</p>
                 </div>
             {% endif %}
         </div>
@@ -100,7 +73,7 @@
         {% if cleanup_list|length > 0 %}
             <div class="mx-auto max-w-7xl grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-4 lg:gap-6 bg-white rounded-lg border-gray-300 p-6">
                 <div class="lg:col-span-2 flex flex-col content-center justify-center mt-10 m-4">
-                    <h2 class="mx-auto align-center font-bold text-1xl text-white bg-blue-500 px-4 py-2 rounded-md w-max text-center">Cleanup Section</em></h2>
+                    <h2 class="mx-auto align-center font-bold text-1xl text-white bg-blue-500 px-4 py-2 rounded-md w-max text-center"><em>Cleanup Section</em></h2>
                     <p class="w-full text-center font-bold text-gray-500">Account Sales that don't have any sale attached to them will be dumped here.</p>
                 </div>
                 <div class="">
@@ -152,12 +125,11 @@
                 }
             }
 
-            function getSale(id){
-                button = $(`input[value="${id}"]`).siblings('button')
-                data_layers = []
-                left_bounds = []
-                generate_data = []
-                button.length == 0 ? $('.generate-account-sales-ctx').attr('disabled', true) : ''
+            function getSale(button){
+                button.length == 0 ? $('#generate-account-sales-ctx').attr('disabled', true) : ''
+                d_layers = []
+                l_bounds = []
+                generated_data = []
                 pass_data = {}
                 title_field = button.parent('.form-complete').siblings('.form-input').children('.form-title-layer').children('input[name="title-layer"]');
                 left_field = button.parent('.form-complete').siblings('.form-input').children('.form-left-bound').children('input[name="left-bound"]');
@@ -166,7 +138,7 @@
                 title_layer = title_field.val()
                 left_bound = left_field.val()
                 file = file_field.val()
-                id = button.siblings('input[name="sale-id"]').val();
+                id = button.siblings('input[name="individual-sale-id"]').val();
                 auction_Pid = button.siblings('input[name="id"]').val();
 
                 data_layers.push(title_layer)
@@ -180,109 +152,122 @@
 
                 generate_data.push(pass_data)
                 return {
-                    'generate_data': generate_data,
-                    'data_layers': data_layers,
-                    'left_bounds': left_bounds,
+                    'generate_data': generated_data,
+                    'data_layers': d_layers,
+                    'left_bounds': l_bounds,
                 }
             }
 
-            for(var i = 0; i < $('[id^=delete-account-sales-ctx]').length; i++){
-                $('[id^=delete-account-sales-ctx]').on('click', function(){
-                    var form_data = new FormData();
-                    msg_alert = $(`#delete-alert-message-${$(this).attr('id').split('-').pop()}`);
-                    auction_id = $(this).siblings('input[name="__auction-id"]').val();
-                    sale_id = $(this).siblings('input[name="sale-id"]').val();
-                    csrf_token = $('input[name="csrfmiddlewaretoken"]').val();
-                    forms_number = $('input[name="files"]').length;
-                    form_data.append("csrfmiddlewaretoken", csrf_token);
-                    form_data.append("auction_id", auction_id);
-                    form_data.append("sale_id", sale_id);
-                    self = $(this)
-                    forms_number >= 1 ? (
-                        self.html('<i class="fa fa-spin fa-spinner"></i> Deleting'),
-                        setTimeout(() => {
-                            $.ajax({
-                                url: '/delete_account_sales_data',
-                                dataType: 'json',
-                                cache: false,
-                                contentType: false,
-                                processData: false,
-                                data: form_data,
-                                type: 'post',
-                                success: function (response) {
-                                    self.html('Delete all account sales for this sale')
-                                    msg_alert.html(response.msg);
-                                    setTimeout(() => {
-                                        window.location = window.location;
-                                    }, 2000)
-                                },
-                                error: function (response) {
-                                    msg_alert.html(response.message);
-                                }
-                            })
-                        }, 2000)
-                    ) : (
-                        $(this).html('No account sales to delete'),
-                        setTimeout(() => {
-                            $(this).html('Delete all account sales for this sale')
-                        }, 3000)
-                    )
-                });
-            }
-
-            gs = $('.generate-account-sales-ctx');
-            for(var b = 0; b < gs.length; b++){
-                gs.eq(b).on('click', function(){
-                    var self = $(this);
-                    var form_data = new FormData();
-                    form_id = $(this).siblings('input[name="sale-id"]').val()
-                    msg_alert = $(this).siblings('.generate-alert-message')
-                    csrf_token = $('input[name="csrfmiddlewaretoken"]').val();
-
-                    sale_date = $(this).siblings('.form-sale-date-picker').children('input[name="form-sale-date-formatted"]').val()
-                    prompt_date = $(this).siblings('.form-prompt-date-picker').children('input[name="form-prompt-date-formatted"]').val()
-
-                    auction_id = $(this).siblings('input[name="auction-id"]').val()
-                    auction_year = $(this).siblings('input[name="auction-year"]').val()
-
-                    catalogue_data = $(this).siblings('input[name="catalogue-data"]').val()
-                    account_sale_data = $(this).siblings('input[name="account-sale-data"]').val()
-                    account_sale_number = $(this).siblings('input[name="account-sale-number"]').val()
-
-                    generate_data = getSale(form_id).generate_data
-                    left_bounds = getSale(form_id).left_bounds
-                    data_layers = getSale(form_id).data_layers
-
-                    form_data.append('data', JSON.stringify(generate_data))
-                    form_data.append("csrfmiddlewaretoken", csrf_token);
-                    form_data.append('sale_date', sale_date);
-                    form_data.append('prompt_date', prompt_date);
-                    form_data.append('auction_id', auction_id);
-                    form_data.append('auction_Pid', auction_Pid);
-                    form_data.append('auction_year', auction_year);
-                    form_data.append('catalogue_data', catalogue_data);
-                    form_data.append('account_sale_data', account_sale_data);
-                    form_data.append('account_sale_number', account_sale_number);
-                            
-                    bounds = [...left_bounds, ...data_layers];
-
-                    console.log(bounds)
-
-                    for(var i = 0; i < bounds.length; i++){
-                        if(!BoundAllow(bounds[i])){
-                            allow = false
-                            break
-                        }
-                        else
-                            if(catalogue_data == "None"){
-                                allow = 'missing'
+            $('#delete-account-sales-ctx').on('click', function(){
+                var form_data = new FormData();
+                msg_alert = $(`[id^=delete-alert-message]`);
+                auction_id = $(this).siblings('input[name="__auction-id"]').val();
+                sale_id = $(this).siblings('input[name="sale-id"]').val();
+                forms_number = $('input[name="files"]').length;
+                csrf_token = $('input[name="csrfmiddlewaretoken"]').val();
+                form_data.append("csrfmiddlewaretoken", csrf_token);
+                form_data.append("auction_id", auction_id);
+                self = $(this)
+                forms_number >= 1 ? (
+                    self.html('<i class="fa fa-spin fa-spinner"></i> Deleting'),
+                    setTimeout(() => {
+                        $.ajax({
+                            url: '/delete_account_sales_data',
+                            dataType: 'json',
+                            cache: false,
+                            contentType: false,
+                            processData: false,
+                            data: form_data,
+                            type: 'post',
+                            success: function (response) {
+                                self.html('Delete all Account Sales for this Auction')
+                                msg_alert.html(response.msg);
+                                setTimeout(() => {
+                                    window.location = window.location;
+                                }, 2000)
+                            },
+                            error: function (response) {
+                                msg_alert.html(response.message);
                             }
-                            else {
-                                allow = true
-                            }
+                        })
+                    }, 2000)
+                ) : (
+                    $(this).html('No account sales to delete'),
+                    setTimeout(() => {
+                        $(this).html('Delete all Account Sales for this Auction')
+                    }, 3000)
+                )
+            });
+
+            gs = $('#generate-account-sales-ctx');
+            gs.on('click', function(){
+                let buttons = $('.button-update-sale');
+                var self = $(this);
+                data_layers = []
+                left_bounds = []
+                generate_data = []
+                
+                form_id = $(this).siblings('input[name="sale-id"]').val()
+                msg_alert = $(this).siblings('.generate-alert-message')
+                csrf_token = $('input[name="csrfmiddlewaretoken"]').val();
+
+                sale_date = $(this).siblings('.form-sale-date-picker').children('input[name="form-sale-date-formatted"]').val()
+                prompt_date = $(this).siblings('.form-prompt-date-picker').children('input[name="form-prompt-date-formatted"]').val()
+                auction_date_title = $('#auction-date-title').val()
+
+                auction_id = $(this).siblings('input[name="auction-id"]').val()
+                auction_year = $(this).siblings('input[name="auction-year"]').val()
+
+                catalogue_data = $(this).siblings('input[name="catalogue-data"]').val()
+                account_sale_data = $(this).siblings('input[name="account-sale-data"]').val()
+                account_sale_number = $(this).siblings('input[name="account-sale-number"]').val()
+
+                for(var i = 0; i < buttons.length; i++){
+                    getSale(buttons.eq(i))
+                }
+
+                console.log(generate_data)
+                console.log(left_bounds)
+                console.log(data_layers)
+
+                var form_data = new FormData();
+
+                csrf_token = $('input[name="csrfmiddlewaretoken"]').val();
+                form_data.append('data', JSON.stringify(generate_data))
+                form_data.append("csrfmiddlewaretoken", csrf_token);
+                form_data.append('sale_date', sale_date);
+                form_data.append('prompt_date', prompt_date);
+                form_data.append('auction_id', auction_id);
+                form_data.append('auction_Pid', auction_Pid);
+                form_data.append('auction_year', auction_year);
+                form_data.append('catalogue_data', catalogue_data);
+                form_data.append('account_sale_data', account_sale_data);
+                form_data.append('account_sale_number', account_sale_number);
+                form_data.append('auction_date_title', auction_date_title);
+
+                console.log(prompt_date)
+                        
+                bounds = [...left_bounds, ...data_layers];
+
+                console.log(bounds)
+
+                for(var i = 0; i < bounds.length; i++){
+                    if(!BoundAllow(bounds[i])){
+                        allow = false
+                        break
                     }
+                    else
+                        if(catalogue_data == "None"){
+                            allow = 'missing'
+                        }
+                        else {
+                            allow = true
+                        }
+                }
 
-                    if(allow === true){
+                if(allow === true){
+                    if(auction_date_title != ""){
+                        self.attr({'disabled': 'disabled'})
                         self.html('<i class="fa fa-spin fa-spinner"></i> Generating');
                         $.ajax({
                             url: '/generate_account_sales',
@@ -293,6 +278,7 @@
                             data: form_data,
                             type: 'post',
                             success: function (response) {
+                                self.removeAttr('disabled')
                                 self.html('Generate Account Sales')
                                 msg_alert.html(response.msg);
                                 setTimeout(() => {
@@ -300,24 +286,27 @@
                                 }, 2000)
                             },
                             error: function (response) {
-                                msg_alert.html(response.message);
+                                msg_alert.html(response.msg);
                             }
                         })
                     }
-                    else if(allow == "missing"){
-                        msg_alert.html('<span class="text-red-500 text-center mb-2 block">*No Catalogue Data Generated. Upload This Sale&apos;s allocations to generate the catalogue data</span>');
-                        setTimeout(() => {
-                            msg_alert.html('')
-                        }, 7000)
+                    else {
+                        $('#auction-date-title').trigger('focus')
                     }
-                    else if(!allow){
-                        msg_alert.html('<span class="text-red-500 relative mb-2 block">*Ensure all left bound and title layer fields have a value greater than 0</span>');
-                        setTimeout(() => {
-                            msg_alert.html('')
-                        }, 5000)
-                    }
-                })
-            }
+                }
+                else if(allow == "missing"){
+                    msg_alert.html('<span class="text-red-500 text-center mb-2 block">*No Catalogue Data Generated. Upload This Auction&apos;s allocations to generate the catalogue data</span>');
+                    setTimeout(() => {
+                        msg_alert.html('')
+                    }, 7000)
+                }
+                else if(!allow){
+                    msg_alert.html('<span class="text-red-500 relative mb-2 block">*Ensure all left bound and title layer fields have a value greater than 0</span>');
+                    setTimeout(() => {
+                        msg_alert.html('')
+                    }, 5000)
+                }
+            })
         });
     </script>
 

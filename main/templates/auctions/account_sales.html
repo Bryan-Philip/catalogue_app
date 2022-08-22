@@ -2,51 +2,36 @@
 
 {% if account_sales %}
 <div class="h-auto border-2 border-gray-200 p-4 rounded-lg">
-    {% if sales_list|length > 0 %}
-        {% if sale_id not in sales_list %}
-            <h2 class="mx-auto align-center font-bold text-1xl text-gray-600">No Account Sales generated yet for this sale</h2>
-        {% endif %}
-        {% for batch in account_sales %}
-            {% if batch.sale_id %}
-                {% if sale_id == batch.sale_id %}
-                    <p>Account Sales generated on: {{batch.date}}</p>
-                    {% if sale_id|in_list:sales_list %}
-                        {% for file in batch.files %}
-                            <div class="bg-white overflow-hidden inline-block shadow-xl rounded-lg w-40 md:w-40 relative">
-                                <i class="h-16 w-16 rounded-full absolute opacity-50 -top-1 -right-12 fa fa-file text-black text-2xl"></i>
-                                <div class="px-4 py-5 sm:p-6">
-                                    <dl>
-                                        <dt class="text-xs leading-5 font-medium text-gray-500 truncate mb-2">
-                                            {{file}}
-                                        </dt>
-                                        <dd class="text-gray-500 font-semibold">
-                                            <a href="/media/documents/account_sales/{{file}}">
-                                                <button
-                                                    class="text-sm button-download-file py-1 px-2 bg-yellow-500 hover:bg-yellow-600 focus:ring-yellow-500 focus:ring-offset-yellow-200 text-white w-full transition ease-in duration-200 text-center text-base font-semibold shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 rounded-lg"
-                                                >
-                                                    Download File
-                                                </button>
-                                            </a>
-                                        </dd>
-                                    </dl>
-                                </div>
-                            </div>
-                        {% endfor %}
-                        {% csrf_token %}
-                        <p class="msg-alert my-2"></p>
-                        <input type="hidden" name="files" value='{% for file in batch.files %}{{file}},,,{% endfor %}'/>
-                        <button class="mb-6 text-sm button-download-zip py-1 px-2 bg-yellow-500 hover:bg-yellow-400 focus:ring-yellow-500 focus:ring-offset-yellow-200 text-white w-full transition ease-in duration-200 text-center text-base font-semibold shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 rounded-lg">
-                            Download Zip
-                        </button>
-                    {% else %}
-                        <h2 class="mx-auto align-center font-bold text-1xl text-gray-600">No Account Sales generated yet for this sale</h2>
-                    {% endif %}
-                {% endif %}
-            {% endif %}
+    {% for batch in account_sales %}
+        <p>Account Sales generated on: {{batch.date}}</p>
+        {% for file in batch.files %}
+            <div class="bg-white overflow-hidden inline-block shadow-xl rounded-lg w-40 md:w-40 relative">
+                <i class="h-16 w-16 rounded-full absolute opacity-50 -top-1 -right-12 fa fa-file text-black text-2xl"></i>
+                <div class="px-4 py-5 sm:p-6">
+                    <dl>
+                        <dt class="text-xs leading-5 font-medium text-gray-500 truncate mb-2">
+                            {{file}}
+                        </dt>
+                        <dd class="text-gray-500 font-semibold">
+                            <a href="/media/documents/account_sales/{{file}}">
+                                <button
+                                    class="text-sm button-download-file py-1 px-2 bg-yellow-500 hover:bg-yellow-600 focus:ring-yellow-500 focus:ring-offset-yellow-200 text-white w-full transition ease-in duration-200 text-center text-base font-semibold shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 rounded-lg"
+                                >
+                                    Download File
+                                </button>
+                            </a>
+                        </dd>
+                    </dl>
+                </div>
+            </div>
         {% endfor %}
-    {% else %}
-        <h2 class="mx-auto align-center font-bold text-1xl text-gray-600 underline"><a href="#cleanup">Check Cleanup Section</a></h2>
-    {% endif %}
+        {% csrf_token %}
+        <p class="msg-alert my-2"></p>
+        <input type="hidden" name="files" value='{% for file in batch.files %}{{file}},,,{% endfor %}'/>
+        <button class="mb-6 text-sm button-download-zip py-1 px-2 bg-yellow-500 hover:bg-yellow-400 focus:ring-yellow-500 focus:ring-offset-yellow-200 text-white w-full transition ease-in duration-200 text-center text-base font-semibold shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 rounded-lg">
+            Download Zip
+        </button>
+    {% endfor %}
 </div>
 {% else %}
 <h2 class="mx-auto align-center font-bold text-1xl text-gray-600">No Account Sales generated yet</h2>
