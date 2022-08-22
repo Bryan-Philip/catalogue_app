@@ -462,6 +462,7 @@ def PopulateRow(sheet, level, row_data, catalogue_data):
             if(data == 'warehouse'):
                 sheet[str(str(DATA_SALE_RELATION[data])+str(level))] = GetInvoiceWarehouse(catalogue_data, replaceResale(row_data['invoice_number_buyer']))
             elif(data == 'invoice_number_buyer'):
+                # print(row_data['invoice_number_buyer'])
                 sheet[str(str(DATA_SALE_RELATION[data])+str(level))] = replaceResale(row_data['invoice_number_buyer'])
             elif(data == 'packages' or data == 'net'):
                 if data == 'net':
@@ -502,7 +503,7 @@ def GetInvoiceWarehouse(catalogue_data, invoice_number):
     for data in catalogue_data:
         for lot in data:
             if(lot == 'invoice_number'):
-                if(data['invoice_number'] == invoice_number):
+                if(str(data['invoice_number']) == str(invoice_number)):
                     lot_warehouse = data['warehouse']
     return lot_warehouse
 
@@ -511,7 +512,7 @@ def GetInvoiceNet(catalogue_data, invoice_number):
     for data in catalogue_data:
         for lot in data:
             if(lot == 'invoice_number'):
-                if(data['invoice_number'] == invoice_number):
+                if(str(data['invoice_number']) == str(invoice_number)):
                     lot_warehouse = data['net']
     return lot_warehouse
 
@@ -520,7 +521,7 @@ def GetInvoiceType(catalogue_data, invoice_number):
     for data in catalogue_data:
         for lot in data:
             if(lot == 'invoice_number'):
-                if(data['invoice_number'] == invoice_number):
+                if(str(data['invoice_number']) == str(invoice_number)):
                     lot_warehouse = data['type']
     return lot_warehouse
 
@@ -529,7 +530,7 @@ def GetInvoiceCompany(catalogue_data, invoice_number):
     for data in catalogue_data:
         for lot in data:
             if(lot == 'invoice_number'):
-                if(data['invoice_number'] == invoice_number):
+                if(str(data['invoice_number']) == str(invoice_number)):
                     lot_company = data['company']
     return lot_company
 
