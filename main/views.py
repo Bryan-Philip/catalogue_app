@@ -16,7 +16,7 @@ from django.views.generic import DetailView
 from main.catalogue.invoice import INVOICEGENERATOR
 from main.catalogue.interpret import GENERATECATALOGUE
 from main.catalogue.account_sale import ACCOUNTSALEGENERATOR
-from main.catalogue.warehouse_confirmation import WAREHOUSECONFIRMATIONGENERATOR
+from main.catalogue.warehouse_confirmation import WHCONFIRMATIONGENERATOR
 import zipfile
 import os
 import zipfile
@@ -927,7 +927,7 @@ def GENERATE_CATALOGUE(data, custom, id, marks_order, reprint_placement):
         return False
 
 def GENERATE_WAREHOUSE_CONFIRMATIONS(data, custom, id):    
-    retdata = WAREHOUSECONFIRMATIONGENERATOR(data, custom)
+    retdata = WHCONFIRMATIONGENERATOR(data, custom)
     dirs = retdata['dirs']
     if len(dirs) >= 1 and len(dirs) >= 1:
         return_data = [{

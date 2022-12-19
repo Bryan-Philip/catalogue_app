@@ -341,6 +341,8 @@ def StackGenerator(input_data, catalogue_data):
         populated.append(inner_val)
     
     def StackAccess(l, v):
+        if l == "004":
+            print(file_datac)
         lval = list()
         for lot in STACK_DATA:
             for val in lot:
@@ -362,6 +364,7 @@ def StackGenerator(input_data, catalogue_data):
             if mark_from_sale != None:
                 PRODUCERS.append(re.sub(r'[0-9]', '', GetAcSaleProducerMark(file_datac, replaceResale(lot['invoice_number_buyer']))))
             else:
+                print(lot['invoice_number_buyer'])
                 PRODUCERS.append(re.sub(r'[0-9]', '', StackAccess(replaceResale(lot['invoice_number_buyer']), "mark")))
 
     PRODUCERS = list(set(PRODUCERS))
@@ -496,6 +499,8 @@ def replaceResale(v):
         if resale in str(v):
             head, sep, tail = str(v).partition(resale)
             head += sep
+            print("Head => " + str(head))
+            print("Replaced =>" + str(head).replace(" ", "").replace("-Resale", "").replace("-resale", "").replace("-RESALE", "").replace("Resale", "").replace("resale", "").replace("RESALE", ""))
             return str(head).replace(" ", "").replace("-Resale", "").replace("-resale", "").replace("-RESALE", "").replace("Resale", "").replace("resale", "").replace("RESALE", "")
         else:
             return v
