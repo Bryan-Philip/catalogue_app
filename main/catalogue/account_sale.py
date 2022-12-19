@@ -549,7 +549,7 @@ def GetAcSaleProducerMark(catalogue_data, invoice_number):
     for data in catalogue_data:
         for lot in data:
             if(lot == 'invoice_number'):
-                if(data['invoice_number'] == invoice_number):
+                if(str(data['invoice_number']) == str(invoice_number)):
                     lot_producer = data['mark']
     return lot_producer
 

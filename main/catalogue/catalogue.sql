@@ -205,8 +205,8 @@ INSERT INTO `invoice_number` (`number`) VALUES
 -- Dumping data for table `invoice_number`
 --
 
-INSERT INTO `account_sale_number` (`number`) VALUES
-(1);
+-- INSERT INTO `account_sale_number` (`number`) VALUES
+-- (1);
 
 -- --------------------------------------------------------
 
