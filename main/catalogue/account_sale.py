@@ -628,7 +628,6 @@ def GenerateAccountSale(data, custom_values, counter, producer):
 
             for sale in lot:
                 for value in sale:
-
                     if value == 'grade':
                         if TEAGRADES_DATA[sale[value]] == 'primary':
                             lot_main.append(sale)
