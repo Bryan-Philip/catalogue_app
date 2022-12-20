@@ -597,17 +597,25 @@ def PopulateInitialData(marks_order, reprint_placement):
                         if(value == 'grade'):
                             if sale[value] == grade:
                                 if sale['reprint'] != None and sale['reprint'] != 'None':
+                                    ##### - Resolve unsorted/reverse-sorted invoice numbers
                                     reprint_list.append(sale)
-                                    if reprint_placement == 'first':
-                                        DATA_POPULATED_GRADED[type][mark][grade].insert(0, sale)
-                                    elif reprint_placement == 'last':
-                                        DATA_POPULATED_GRADED[type][mark][grade].append(sale)
+                                    # Start Resolution
+                                    # if reprint_placement == 'first':
+                                    #     DATA_POPULATED_GRADED[type][mark][grade].insert(0, sale)
+                                    # elif reprint_placement == 'last':
+                                    #     DATA_POPULATED_GRADED[type][mark][grade].append(sale)
+                                    # End Resolution
                     counter += 1
-                # if len(reprint_list) > 0:
-                #     if reprint_placement == 'first':
-                #         DATA_POPULATED_GRADED[type][mark][grade]= [*reprint_list, *DATA_POPULATED_GRADED[type][mark][grade]]
-                #     elif reprint_placement == 'last':
-                #         DATA_POPULATED_GRADED[type][mark][grade]= [*DATA_POPULATED_GRADED[type][mark][grade], *reprint_list]
+                # Resolve unsorted/reverse-sorted invoice numbers ###
+                # Add as single list rather than append item by item ###
+                if len(reprint_list) > 0:
+                    print("-- REPRINT LIST SECTION --")
+                    print(reprint_list)
+                    print("-- REPRINT LIST SECTION --")
+                    if reprint_placement == 'first':
+                        DATA_POPULATED_GRADED[type][mark][grade] = [*reprint_list, *DATA_POPULATED_GRADED[type][mark][grade]]
+                    elif reprint_placement == 'last':
+                        DATA_POPULATED_GRADED[type][mark][grade] = [*DATA_POPULATED_GRADED[type][mark][grade], *reprint_list]
 
     for type in DATA_POPULATED_GRADED:
         for mark in DATA_POPULATED_GRADED[type]:
