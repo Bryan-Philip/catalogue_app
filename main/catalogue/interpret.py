@@ -609,9 +609,8 @@ def PopulateInitialData(marks_order, reprint_placement):
                 # Resolve unsorted/reverse-sorted invoice numbers ###
                 # Add as single list rather than append item by item ###
                 if len(reprint_list) > 0:
-                    print("-- REPRINT LIST SECTION --")
-                    print(reprint_list)
-                    print("-- REPRINT LIST SECTION --")
+                    reprint_list.sort(key=lambda item: item.get("invoice_number"))
+                    # SORT reprints by invoice number
                     if reprint_placement == 'first':
                         DATA_POPULATED_GRADED[type][mark][grade] = [*reprint_list, *DATA_POPULATED_GRADED[type][mark][grade]]
                     elif reprint_placement == 'last':
