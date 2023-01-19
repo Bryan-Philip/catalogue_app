@@ -324,6 +324,47 @@ def RelationshipSort(obj, rel, key):
                         sorted_object.append(val)
     return sorted_object
 
+def generate_sorter(data_val):
+    rel = list()
+    sorted_rel = list()
+    if len(data_val) > 0:
+        for item in data_val:
+            rel.append(item["invoice_number"].split('||')[0])
+        partition = len(rel[0].split('/'))
+        if partition == 1:
+            data_val.sort(key = lambda i: i.get("invoice_number").split('||')[0])
+            sorted_rel = data_val
+        elif partition == 2:
+            partition_data = list()
+            ys = list()
+            ys_data = dict()
+            sorted_unpartition = list()
+            for item in rel:
+                partition_data.append(
+                    {
+                        "n":item.split('/')[0],
+                        "y": item.split('/')[1],
+                    }
+                )
+                ys.append(item.split('/')[1])
+            l = set()
+            ys =  [x for x in ys if x not in l and l.add(x) is None]
+            ys.sort()
+            for y in ys:
+                ys_data[y] = []
+            for yr in ys_data:
+                for data in partition_data:
+                    if data['y'] == yr:
+                        ys_data[yr].append(data['n'])
+                ys_data[yr].sort()
+            for yr in ys_data:
+                for data in ys_data[yr]:
+                    sorted_unpartition.append(f'{data}/{yr}')
+            sorted_rel = sorted(data_val, key=lambda x:sorted_unpartition.index(x['invoice_number'].split('||')[0]))
+    else:
+        sorted_rel = []
+    return sorted_rel
+
 def StackGenerator(input_data):
     global STACK_DATA
     global combined
@@ -347,7 +388,10 @@ def StackGenerator(input_data):
                 exist.append(single)
         for value in DATA_CATALOGUE.keys():
             if(value in exist):
-                inner_val[value] = data[value]
+                if value == "invoice_number":
+                    inner_val[value] = f'{str(data[value])}||{str(data["mark"])}'
+                else:
+                    inner_val[value] = data[value]
             else:
                 inner_val[value] = None
         populated.append(inner_val)
@@ -511,6 +555,7 @@ def PopulateInitialData(marks_order, reprint_placement):
                         POPULATED_SECONDARY.append(sale)
                     else:
                         POPULATED_MAIN.append(sale)
+                # Replace Bounds [ MARK-ed invoice_number ]
         sales += 1
         
     DATA_POPULATED = {
@@ -584,7 +629,9 @@ def PopulateInitialData(marks_order, reprint_placement):
     for type in DATA_POPULATED_GRADED:
         for mark in DATA_POPULATED_GRADED[type]:
             for grade in DATA_POPULATED_GRADED[type][mark]:
-                DATA_POPULATED_GRADED[type][mark][grade].sort(key=lambda item: item.get("invoice_number"))
+                DATA_POPULATED_GRADED[type][mark][grade] = generate_sorter(DATA_POPULATED_GRADED[type][mark][grade])
+                # Delegate sorting to function
+                # DATA_POPULATED_GRADED[type][mark][grade].sort(key=lambda item: item.get("invoice_number"))
                 
     # Secondary Grade Order - reprints placement
     for type in DATA_POPULATED_GROUPED:
@@ -609,7 +656,9 @@ def PopulateInitialData(marks_order, reprint_placement):
                 # Resolve unsorted/reverse-sorted invoice numbers ###
                 # Add as single list rather than append item by item ###
                 if len(reprint_list) > 0:
-                    reprint_list.sort(key=lambda item: item.get("invoice_number"))
+                    reprint_list = generate_sorter(reprint_list)
+                    # Delegate sorting to function
+                    # reprint_list.sort(key=lambda item: item.get("invoice_number"))
                     # SORT reprints by invoice number
                     if reprint_placement == 'first':
                         DATA_POPULATED_GRADED[type][mark][grade] = [*reprint_list, *DATA_POPULATED_GRADED[type][mark][grade]]
@@ -747,7 +796,7 @@ def InitGenerator():
 def GenerateLot():
     pc = [*GLOBAL_DATA_PRIMARY, *GLOBAL_DATA_SECONDARY]
     for sale in pc:
-        INVOICE_ORDERS[sale['invoice_number']] = sale['lot']
+        INVOICE_ORDERS[str(sale['invoice_number'])] = sale['lot']
 
 def CumulativePopulate(lotnum, marks_order, reprint_placement):
     PopulateInitialData(marks_order, reprint_placement)
@@ -755,6 +804,7 @@ def CumulativePopulate(lotnum, marks_order, reprint_placement):
     CloseLot(LotCounter())
     separator_access = InitGenerator()
     GenerateLot()
+    print(INVOICE_ORDERS)
     return {
         'lotnumber': lot,
         'catalogue_data': [*GLOBAL_DATA_PRIMARY, *GLOBAL_DATA_SECONDARY],
@@ -975,6 +1025,7 @@ class PopulateCatalogue:
                 access_column = CATALOGUE_KEYS[access_col-1]
                 access_column_data = focus[row-4][access_column]
                 access[CATALOGUE_KEYS[access_col-1]] = access_column_data
+                print(access)
             for col in range(1, len(DATA_CATALOGUE)):
                 column = CATALOGUE_KEYS[col-1]
                 column_data = focus[row-4][column]
@@ -986,6 +1037,11 @@ class PopulateCatalogue:
                             cell = column_data
                         else: cell = None
                     else: cell = None
+                elif(column == 'invoice_number'):
+                    if(column_data != None):
+                        cell = column_data.split("||")[0]
+                    else:
+                        cell = column_data
                 elif(column == 'warehouse'):
                     if(column_data != None):
                         cell = column_data
