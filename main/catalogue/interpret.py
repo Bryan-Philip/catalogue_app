@@ -327,42 +327,70 @@ def RelationshipSort(obj, rel, key):
 def generate_sorter(data_val):
     rel = list()
     sorted_rel = list()
-    if len(data_val) > 0:
-        for item in data_val:
-            rel.append(item["invoice_number"].split('||')[0])
-        partition = len(rel[0].split('/'))
-        if partition == 1:
+    for item in data_val:
+        _val = str(item["invoice_number"]).split('||')[0]
+        _val3 = None
+        _type = "str"
+        _type3 = "str"
+        if _val.isdigit():
+            rel.append(int(_val))
+            partition = 1
+            _type = "int"
+        else:
+            rel.append(_val)
+            partition = len(rel[0].split('/'))
+            if partition == 3:
+                _val3 = item["invoice_number"].split('||')[0].split('/')[2]
+                if _val3.isdigit():
+                    _type3 = "int"
+    if partition == 1:
+        if _type == "int":
+            data_val.sort(key = lambda i: int(str(i.get("invoice_number")).split('||')[0]))
+        else:
             data_val.sort(key = lambda i: i.get("invoice_number").split('||')[0])
-            sorted_rel = data_val
-        elif partition == 2:
-            partition_data = list()
-            ys = list()
-            ys_data = dict()
-            sorted_unpartition = list()
-            for item in rel:
-                partition_data.append(
-                    {
-                        "n":item.split('/')[0],
-                        "y": item.split('/')[1],
-                    }
-                )
-                ys.append(item.split('/')[1])
-            l = set()
-            ys =  [x for x in ys if x not in l and l.add(x) is None]
-            ys.sort()
-            for y in ys:
-                ys_data[y] = []
-            for yr in ys_data:
-                for data in partition_data:
-                    if data['y'] == yr:
+        sorted_rel = data_val
+    elif partition == 3:
+        if _type3 == "int":
+            data_val.sort(key = lambda i: int(i.get("invoice_number").split('||')[0].split('/')[2]))
+        else:
+            data_val.sort(key = lambda i: i.get("invoice_number").split('||')[0])
+        sorted_rel = data_val
+    elif partition == 2:
+        partition_data = list()
+        ys = list()
+        ys_data = dict()
+        sorted_unpartition = list()
+        for item in rel:
+            partition_data.append(
+                {
+                    "n":item.split('/')[0],
+                    "y": item.split('/')[1],
+                }
+            )
+            ys.append(item.split('/')[1])
+        l = set()
+        ys =  [x for x in ys if x not in l and l.add(x) is None]
+        ys.sort()
+        for y in ys:
+            ys_data[y] = []
+        sample_val = "str"
+        for yr in ys_data:
+            for data in partition_data:
+                if data['y'] == yr:
+                    if data['n'].isdigit():
+                        sample_val = "int"
+                    if sample_val == "int":
+                        ys_data[yr].append(int(data['n']))
+                    else:
                         ys_data[yr].append(data['n'])
-                ys_data[yr].sort()
-            for yr in ys_data:
-                for data in ys_data[yr]:
-                    sorted_unpartition.append(f'{data}/{yr}')
-            sorted_rel = sorted(data_val, key=lambda x:sorted_unpartition.index(x['invoice_number'].split('||')[0]))
+            ys_data[yr].sort()
+        for yr in ys_data:
+            for data in ys_data[yr]:
+                sorted_unpartition.append(f'{data}/{yr}')
+        sorted_rel = sorted(data_val, key=lambda x:sorted_unpartition.index(x['invoice_number'].split('||')[0]))
     else:
-        sorted_rel = []
+        data_val.sort(key = lambda i: i.get("invoice_number").split('||')[0])
+        sorted_rel = data_val
     return sorted_rel
 
 def StackGenerator(input_data):
