@@ -360,6 +360,7 @@ def generate_sorter(data_val):
             partition_data = list()
             ys = list()
             ys_data = dict()
+            ys_data_retain = dict()
             sorted_unpartition = list()
             for item in rel:
                 partition_data.append(
@@ -382,12 +383,16 @@ def generate_sorter(data_val):
                             sample_val = "int"
                         if sample_val == "int":
                             ys_data[yr].append(int(data['n']))
+                            ys_data_retain[int(data['n'])] = data['n']
                         else:
                             ys_data[yr].append(data['n'])
                 ys_data[yr].sort()
             for yr in ys_data:
                 for data in ys_data[yr]:
-                    sorted_unpartition.append(f'{data}/{yr}')
+                    if sample_val == "int":
+                        sorted_unpartition.append(f'{ys_data_retain[data]}/{yr}')
+                    else:
+                        sorted_unpartition.append(f'{data}/{yr}')
             sorted_rel = sorted(data_val, key=lambda x:sorted_unpartition.index(x['invoice_number'].split('||')[0]))
         else:
             data_val.sort(key = lambda i: i.get("invoice_number").split('||')[0])
