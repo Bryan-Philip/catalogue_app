@@ -460,23 +460,26 @@ def PopulateRow(sheet, level, row_data, catalogue_data):
         warehouse = DatabaseQueryProducerCompany(mark)
         if(data[0] != '_'):
             if(data == 'warehouse'):
-                sheet[str(str(DATA_SALE_RELATION[data])+str(level))] = GetInvoiceWarehouse(catalogue_data, replaceResale(row_data['invoice_number_buyer']))
+                sheet[str(str(DATA_SALE_RELATION[data])+str(level))] = GetInvoiceWarehouse(catalogue_data, replaceResale(row_data['invoice_number_buyer']), mark)
             elif(data == 'invoice_number_buyer'):
                 # print(row_data['invoice_number_buyer'])
                 sheet[str(str(DATA_SALE_RELATION[data])+str(level))] = replaceResale(row_data['invoice_number_buyer'])
             elif(data == 'packages' or data == 'net'):
                 if data == 'net':
                     if data != None:
-                        sheet[str(str(DATA_SALE_RELATION[data])+str(level))] = int(GetInvoiceNet(catalogue_data, replaceResale(row_data['invoice_number_buyer'])))
+                        print(mark)
+                        print(row_data['invoice_number_buyer'])
+                        print(replaceResale(row_data['invoice_number_buyer']))
+                        sheet[str(str(DATA_SALE_RELATION[data])+str(level))] = int(GetInvoiceNet(catalogue_data, replaceResale(row_data['invoice_number_buyer']), mark))
                     else:
-                        sheet[str(str(DATA_SALE_RELATION[data])+str(level))] = GetInvoiceNet(catalogue_data, replaceResale(row_data['invoice_number_buyer']))
+                        sheet[str(str(DATA_SALE_RELATION[data])+str(level))] = GetInvoiceNet(catalogue_data, replaceResale(row_data['invoice_number_buyer']), mark)
                 else:
                     if data != None:
                         sheet[str(str(DATA_SALE_RELATION[data])+str(level))] = int(row_data[data])
                     else:
                         sheet[str(str(DATA_SALE_RELATION[data])+str(level))] = row_data[data]
             elif(data == 'type'):
-                sheet[str(str(DATA_SALE_RELATION[data])+str(level))] = GetInvoiceType(catalogue_data, replaceResale(row_data['invoice_number_buyer']))
+                sheet[str(str(DATA_SALE_RELATION[data])+str(level))] = GetInvoiceType(catalogue_data, replaceResale(row_data['invoice_number_buyer']), mark)
             else:
                 sheet[str(str(DATA_SALE_RELATION[data])+str(level))] = row_data[data]
             Format.formatArial11(sheet[str(str(DATA_SALE_RELATION[data])+str(level))])
@@ -498,39 +501,39 @@ def PopulateRow(sheet, level, row_data, catalogue_data):
     }
 
 
-def GetInvoiceWarehouse(catalogue_data, invoice_number):
+def GetInvoiceWarehouse(catalogue_data, invoice_number, mark):
     lot_warehouse = None
     for data in catalogue_data:
         for lot in data:
             if(lot == 'invoice_number'):
-                if(str(data['invoice_number']) == str(invoice_number)):
+                if(str(data["invoice_number"]) == str(f'{invoice_number}||{mark}')):
                     lot_warehouse = data['warehouse']
     return lot_warehouse
 
-def GetInvoiceNet(catalogue_data, invoice_number):
+def GetInvoiceNet(catalogue_data, invoice_number, mark):
     lot_warehouse = None
     for data in catalogue_data:
         for lot in data:
             if(lot == 'invoice_number'):
-                if(str(data['invoice_number']) == str(invoice_number)):
+                if(str(data["invoice_number"]) == str(f'{invoice_number}||{mark}')):
                     lot_warehouse = data['net']
     return lot_warehouse
 
-def GetInvoiceType(catalogue_data, invoice_number):
+def GetInvoiceType(catalogue_data, invoice_number, mark):
     lot_warehouse = None
     for data in catalogue_data:
         for lot in data:
             if(lot == 'invoice_number'):
-                if(str(data['invoice_number']) == str(invoice_number)):
+                if(str(data["invoice_number"]) == str(f'{invoice_number}||{mark}')):
                     lot_warehouse = data['type']
     return lot_warehouse
 
-def GetInvoiceCompany(catalogue_data, invoice_number):
+def GetInvoiceCompany(catalogue_data, invoice_number, mark):
     lot_company = None
     for data in catalogue_data:
         for lot in data:
             if(lot == 'invoice_number'):
-                if(str(data['invoice_number']) == str(invoice_number)):
+                if(str(data["invoice_number"]) == str(f'{invoice_number}||{mark}')):
                     lot_company = data['company']
     return lot_company
 
@@ -551,7 +554,9 @@ def GenerateInvoice(data, custom_values, counter, buyer):
         lot = data[buyer]
         for lot_data in lot:
             invoice_number = lot_data['invoice_number_buyer']
-            lot_company = GetInvoiceCompany(file_datac, invoice_number)
+            mark = lot_data['mark']
+            print(mark)
+            lot_company = GetInvoiceCompany(file_datac, invoice_number, mark)
             if lot_company == 'KTDA':
                 LOT_KTDA[buyer].append(lot_data)
             else:
