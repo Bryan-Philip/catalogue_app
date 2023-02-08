@@ -358,11 +358,12 @@ def StackGenerator(input_data, catalogue_data):
         file_datac = json.load(fcc_file)
         
     for lot in populated:
-        lot['producer'] = GetAcSaleProducerMark(file_datac, replaceResale(lot['invoice_number_buyer']))
+        mark = lot['mark']
+        lot['producer'] = GetAcSaleProducerMark(file_datac, replaceResale(lot['invoice_number_buyer']), mark)
         if replaceResale(lot['invoice_number_buyer']) != '':
-            mark_from_sale = GetAcSaleProducerMark(file_datac, replaceResale(lot['invoice_number_buyer']))
+            mark_from_sale = GetAcSaleProducerMark(file_datac, replaceResale(lot['invoice_number_buyer']), mark)
             if mark_from_sale != None:
-                PRODUCERS.append(re.sub(r'[0-9]', '', GetAcSaleProducerMark(file_datac, replaceResale(lot['invoice_number_buyer']))))
+                PRODUCERS.append(re.sub(r'[0-9]', '', GetAcSaleProducerMark(file_datac, replaceResale(lot['invoice_number_buyer']), mark)))
             else:
                 print(lot['invoice_number_buyer'])
                 PRODUCERS.append(re.sub(r'[0-9]', '', StackAccess(replaceResale(lot['invoice_number_buyer']), "mark")))
@@ -510,7 +511,7 @@ def PopulateRow(sheet, level, row_data, catalogue_data):
     global NUMBER_FORMAT_CELLS
     NUMBER_FORMAT_CELLS = list()
     for data in DATA_SALE:
-        # mark = row_data['mark']
+        mark = row_data['mark']
         # warehouse = DatabaseQueryProducerCompany(mark)
         # mark = None
         if(data[0] != '_'):
@@ -520,7 +521,7 @@ def PopulateRow(sheet, level, row_data, catalogue_data):
                 # print('row data')
                 # print(row_data)
                 # print(row_data['invoice_number_buyer'])
-                sheet[str(str(DATA_SALE_RELATION[data])+str(level))] = GetAcSaleProducerMark(catalogue_data, replaceResale(row_data['invoice_number_buyer']))
+                sheet[str(str(DATA_SALE_RELATION[data])+str(level))] = GetAcSaleProducerMark(catalogue_data, replaceResale(row_data['invoice_number_buyer']), mark)
             elif(data == 'packages' or data == 'net'):
                 if row_data[data] != None:
                     sheet[str(str(DATA_SALE_RELATION[data])+str(level))] = int(row_data[data])
@@ -544,12 +545,12 @@ def PopulateRow(sheet, level, row_data, catalogue_data):
 
     return NUMBER_FORMAT_CELLS
 
-def GetAcSaleProducerMark(catalogue_data, invoice_number):
+def GetAcSaleProducerMark(catalogue_data, invoice_number, mark):
     lot_producer = None
     for data in catalogue_data:
         for lot in data:
             if(lot == 'invoice_number'):
-                if(str(data['invoice_number']) == str(invoice_number)):
+                if(str(data["invoice_number"]) == str(f'{invoice_number}||{mark}')):
                     lot_producer = data['mark']
     return lot_producer
 
