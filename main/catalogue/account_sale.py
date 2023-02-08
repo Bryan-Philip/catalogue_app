@@ -325,6 +325,7 @@ def StackGenerator(input_data, catalogue_data):
     for data in STACK_DATA.values():
         combined += data
     STACK_DATA = combined
+    print(STACK_DATA)
     for lot in STACK_DATA:
         LOT_STATUS_RELATION[lot['lot_number']] = lot['status']
     for data in STACK_DATA:
@@ -358,6 +359,7 @@ def StackGenerator(input_data, catalogue_data):
         file_datac = json.load(fcc_file)
         
     for lot in populated:
+        print(lot)
         mark = lot['mark']
         lot['producer'] = GetAcSaleProducerMark(file_datac, replaceResale(lot['invoice_number_buyer']), mark)
         if replaceResale(lot['invoice_number_buyer']) != '':
