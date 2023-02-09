@@ -840,7 +840,6 @@ def CumulativePopulate(lotnum, marks_order, reprint_placement):
     CloseLot(LotCounter())
     separator_access = InitGenerator()
     GenerateLot()
-    print(INVOICE_ORDERS)
     return {
         'lotnumber': lot,
         'catalogue_data': [*GLOBAL_DATA_PRIMARY, *GLOBAL_DATA_SECONDARY],
@@ -1061,7 +1060,6 @@ class PopulateCatalogue:
                 access_column = CATALOGUE_KEYS[access_col-1]
                 access_column_data = focus[row-4][access_column]
                 access[CATALOGUE_KEYS[access_col-1]] = access_column_data
-                print(access)
             for col in range(1, len(DATA_CATALOGUE)):
                 column = CATALOGUE_KEYS[col-1]
                 column_data = focus[row-4][column]

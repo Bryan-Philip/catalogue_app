@@ -292,6 +292,7 @@ class DataInterpretor:
 STACK_DATA = {}
 combined = list()
 LOT_STATUS_RELATION = dict()
+LOT_MARK_RELATION = dict()
 populated = list()
 PRODUCERS = list()
 PRODUCERS_RELATION = dict()
@@ -311,6 +312,7 @@ def StackGenerator(input_data, catalogue_data):
     global PRODUCERS
     global PRODUCERS_RELATION
     global PRODUCERS_OUTLOT
+    global LOT_MARK_RELATION
     combined = list()
     counter = 0
     for file in input_data:
@@ -325,9 +327,12 @@ def StackGenerator(input_data, catalogue_data):
     for data in STACK_DATA.values():
         combined += data
     STACK_DATA = combined
-    print(STACK_DATA)
     for lot in STACK_DATA:
         LOT_STATUS_RELATION[lot['lot_number']] = lot['status']
+        LOT_MARK_RELATION[lot['lot_number']] = {
+            'mark': lot['mark'],
+            'invoice': lot['invoice_number_buyer'],
+        }
     for data in STACK_DATA:
         exist = list()
         inner_val = dict()
@@ -341,14 +346,13 @@ def StackGenerator(input_data, catalogue_data):
                 inner_val[value] = None
         populated.append(inner_val)
     
-    def StackAccess(l, v):
-        if l == "004":
-            print(file_datac)
+    def StackAccess(l, v, mark):
         lval = list()
         for lot in STACK_DATA:
             for val in lot:
                 if val == "invoice_number_buyer":
-                    if lot[val] == l:
+                    # if str(f'{lot[val]}||{mark}') == l:
+                    if replaceResale(lot[val]) == l:
                         lval = lot
                         return lval[v]
     
@@ -359,16 +363,14 @@ def StackGenerator(input_data, catalogue_data):
         file_datac = json.load(fcc_file)
         
     for lot in populated:
-        print(lot)
-        mark = lot['mark']
+        mark = LOT_MARK_RELATION[lot['lot_number']]['mark']
         lot['producer'] = GetAcSaleProducerMark(file_datac, replaceResale(lot['invoice_number_buyer']), mark)
         if replaceResale(lot['invoice_number_buyer']) != '':
             mark_from_sale = GetAcSaleProducerMark(file_datac, replaceResale(lot['invoice_number_buyer']), mark)
             if mark_from_sale != None:
                 PRODUCERS.append(re.sub(r'[0-9]', '', GetAcSaleProducerMark(file_datac, replaceResale(lot['invoice_number_buyer']), mark)))
             else:
-                print(lot['invoice_number_buyer'])
-                PRODUCERS.append(re.sub(r'[0-9]', '', StackAccess(replaceResale(lot['invoice_number_buyer']), "mark")))
+                PRODUCERS.append(re.sub(r'[0-9]', '', StackAccess(replaceResale(lot['invoice_number_buyer']), "mark", mark)))
 
     PRODUCERS = list(set(PRODUCERS))
     print(PRODUCERS)
@@ -387,8 +389,6 @@ def StackGenerator(input_data, catalogue_data):
             number = lot['lot_number']
             for _lot in STACK_DATA:
                 if(_lot['lot_number']) == number:
-                    # print('-- outlot --')
-                    # print(_lot)
                     PRODUCERS_OUTLOT.append(_lot)
     
 # def arrangeData():
@@ -502,8 +502,6 @@ def replaceResale(v):
         if resale in str(v):
             head, sep, tail = str(v).partition(resale)
             head += sep
-            print("Head => " + str(head))
-            print("Replaced =>" + str(head).replace(" ", "").replace("-Resale", "").replace("-resale", "").replace("-RESALE", "").replace("Resale", "").replace("resale", "").replace("RESALE", ""))
             return str(head).replace(" ", "").replace("-Resale", "").replace("-resale", "").replace("-RESALE", "").replace("Resale", "").replace("resale", "").replace("RESALE", "")
         else:
             return v
@@ -513,20 +511,19 @@ def PopulateRow(sheet, level, row_data, catalogue_data):
     global NUMBER_FORMAT_CELLS
     NUMBER_FORMAT_CELLS = list()
     for data in DATA_SALE:
-        mark = row_data['mark']
+        mark = LOT_MARK_RELATION[row_data['lot_number']]["mark"]
         # warehouse = DatabaseQueryProducerCompany(mark)
         # mark = None
         if(data[0] != '_'):
             # if(data == 'warehouse'):
             #     sheet[str(str(DATA_SALE_RELATION[data])+str(level))] = warehouse
             if(data == 'warehouse'):
-                # print('row data')
-                # print(row_data)
-                # print(row_data['invoice_number_buyer'])
                 sheet[str(str(DATA_SALE_RELATION[data])+str(level))] = GetAcSaleProducerMark(catalogue_data, replaceResale(row_data['invoice_number_buyer']), mark)
             elif(data == 'packages' or data == 'net'):
                 if row_data[data] != None:
                     sheet[str(str(DATA_SALE_RELATION[data])+str(level))] = int(row_data[data])
+            elif(data == 'invoice_number_buyer'):
+                sheet[str(str(DATA_SALE_RELATION[data])+str(level))] = replaceResale(row_data[data])
             else:
                 sheet[str(str(DATA_SALE_RELATION[data])+str(level))] = row_data[data]
             Format.formatArial11BgWhite(sheet[str(str(DATA_SALE_RELATION[data])+str(level))])
@@ -572,8 +569,6 @@ def GenerateAccountSale(data, custom_values, counter, producer):
 
     for producer in data:
         lot = data[producer]
-        if producer == 'CUPATEA':
-            print(lot)
         for lot_data in lot:
             LOT_COMBINED[producer].append(lot_data)
 
@@ -665,14 +660,14 @@ def GenerateAccountSale(data, custom_values, counter, producer):
             crates_charges = tax_summary-3
 
             # DEBUG VALUES
-            # print("PROMPT DATE => " + str(prompt_date))
-            # print("LOT SECONDARY START => " + str(lot_secondary_ac_start))
-            # print("LOT SECONDARY TITLE => " + str(lot_secondary_title))
-            # print("TOTALS => " + str(totals))
-            # print("SUMMARY => " + str(tax_summary))
-            # print("MAIN LENGTH => " + str(main_length))
-            # print("SECONDARY LENGTH => " + str(secondary_length))
-            # print("DATA LENGTH => " + str(data_length))
+            # ("PROMPT DATE => " + str(prompt_date))
+            # ("LOT SECONDARY START => " + str(lot_secondary_ac_start))
+            # ("LOT SECONDARY TITLE => " + str(lot_secondary_title))
+            # ("TOTALS => " + str(totals))
+            # ("SUMMARY => " + str(tax_summary))
+            # ("MAIN LENGTH => " + str(main_length))
+            # ("SECONDARY LENGTH => " + str(secondary_length))
+            # ("DATA LENGTH => " + str(data_length))
 
             if(data_length > 1):
                 if main_length > 1:
