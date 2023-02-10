@@ -579,6 +579,12 @@ def GenerateAccountSale(data, custom_values, counter, producer):
 
         catalogue_data = custom_values['catalogue_data']
 
+        folder='media/documents/catalogue_data'
+        alt_fsc = FileSystemStorage(location=folder)
+        
+        with alt_fsc.open(catalogue_data, 'rb+') as _fcc_file:
+            alt_file_datac = json.load(_fcc_file)
+
         file_data = template_default
         ACsale_template = load_workbook(filename = file_data)
 
@@ -639,13 +645,13 @@ def GenerateAccountSale(data, custom_values, counter, producer):
 
             # Extract Catalogue Lot Order
             LOT_ORDER = list()
-            for data in catalogue_data:
+            for data in alt_file_datac:
                 for lot in data:
-                    if(lot == 'lot_number'):
-                        LOT_ORDER.append(data["invoice_number"])
+                    if(lot == 'lot'):
+                        LOT_ORDER.append(data["lot"])
             
-            lot_main = sorted(lot_main, key = lambda x: LOT_ORDER.index(x['lot_number']))
-            lot_secondary = sorted(lot_main, key = lambda y: LOT_ORDER.index(y['lot_number']))
+            lot_main = sorted(lot_main, key = lambda x: LOT_ORDER.index(int(x['lot_number'])))
+            lot_secondary = sorted(lot_secondary, key = lambda y: LOT_ORDER.index(int(y['lot_number'])))
 
             main_length = len(lot_main)
             secondary_length = len(lot_secondary)
