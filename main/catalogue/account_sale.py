@@ -636,7 +636,17 @@ def GenerateAccountSale(data, custom_values, counter, producer):
                             lot_main.append(sale)
                         else:
                             lot_secondary.append(sale)
+
+            # Extract Catalogue Lot Order
+            LOT_ORDER = list()
+            for data in catalogue_data:
+                for lot in data:
+                    if(lot == 'lot_number'):
+                        LOT_ORDER.append(data["invoice_number"])
             
+            lot_main = sorted(lot_main, key = lambda x: LOT_ORDER.index(x['lot_number']))
+            lot_secondary = sorted(lot_main, key = lambda y: LOT_ORDER.index(y['lot_number']))
+
             main_length = len(lot_main)
             secondary_length = len(lot_secondary)
             data_length = (main_length)+(secondary_length)
