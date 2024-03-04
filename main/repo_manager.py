@@ -43,7 +43,9 @@ repo = Repo(repo_path)
 #     else:
 #         print('Could not load repository at {} :('.format(repo_path))
 
-repo_remote_url = 'https://github.com/Cypherjac/catalogue_app.git'
+# repo_remote_url = 'https://github.com/Cypherjac/catalogue_app.git'
+
+repo_remote_url = 'https://github.com/Yego001/brokerApp.git'
 
 def COMMIT_HASH(source):
     if source == 'local':
