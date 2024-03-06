@@ -2,8 +2,8 @@ from mysql.connector import pooling
 
 CONNECTOR = {
     "host":"localhost",
-    "user":"winston",
-    "password":"winston",
+    "user":"admin",
+    "password":"%$Eatta!@Db#23",
     "database":"catalogue",
-    "port": "3306",
+    "port": "4306",
 }
