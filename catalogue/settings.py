@@ -26,7 +26,7 @@ SECRET_KEY = 'django-insecure-&na&8d1^6hfh(xfcjjhb4ef!jsdku4#3lp&ob7nqyz4m)7!ojk
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['l27.0.0.1', 'localhost']
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
 
 SETTINGS_PATH = os.path.dirname(os.path.dirname(__file__))
 
@@ -88,13 +88,19 @@ WSGI_APPLICATION = 'catalogue.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
+          'NAME': 'catalogue',
+        'USER': 'admin',
+        'PASSWORD': '%$Eatta!@Db#23',
+        'HOST':'localhost',
+        'PORT':'4306',
         # 'ENGINE': 'django.db.backends.sqlite3', --> sqlite
         # 'NAME': BASE_DIR / 'db.sqlite3', --> sqlite
-        'NAME': 'catalogue',
-        'USER': 'winston',
-        'PASSWORD': 'winston',
-        'HOST':'localhost',
-        'PORT':'3306',
+        # 'NAME': 'catalogue',
+        # 'USER': 'winston',
+        # 'PASSWORD': 'winston',
+        # 'HOST':'localhost',
+        # 'PORT':'3306',
+        
     }
 }
 

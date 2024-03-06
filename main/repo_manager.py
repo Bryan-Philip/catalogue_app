@@ -23,7 +23,7 @@ def print_repository(repo):
         print('Remote named "{}" with URL "{}"'.format(remote, remote.url))
     print('Last commit for repo is {}.'.format(str(repo.head.commit.hexsha)))
 
-repo_path = "/Users/User/Desktop/catalogue_app"
+repo_path = "/Users/BryanWafula/Desktop/catalogue_app"
 repo = Repo(repo_path)
 
 # Get Untracked Files
@@ -43,7 +43,9 @@ repo = Repo(repo_path)
 #     else:
 #         print('Could not load repository at {} :('.format(repo_path))
 
-repo_remote_url = 'https://github.com/Cypherjac/catalogue_app.git'
+# repo_remote_url = 'https://github.com/Cypherjac/catalogue_app.git'
+
+repo_remote_url = 'https://github.com/Yego001/brokerApp.git'
 
 def COMMIT_HASH(source):
     if source == 'local':
